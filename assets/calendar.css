@@ -1,0 +1,366 @@
+/* Consult booking calendar, adapted from the LA Bot Shows calendar (pricing, add-ons and show details removed). */
+.calendar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.calendar-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.calendar-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #171717;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem;
+  padding: 1.875rem;
+  color: #ececec;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  transform: scale(0.96) translateY(8px);
+  transition: transform 0.2s ease;
+}
+
+.calendar-overlay.is-open .calendar-modal {
+  transform: scale(1) translateY(0);
+}
+
+.calendar-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.calendar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.625rem;
+  height: 2.625rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: none;
+  color: #ececec;
+  font-size: 2.0625rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.calendar-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.125rem;
+}
+
+.calendar-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.625rem;
+  height: 2.625rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: none;
+  color: #b5b5b5;
+  cursor: pointer;
+}
+
+.calendar-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ececec;
+}
+
+.calendar-month-label {
+  font-size: 1.3125rem;
+  font-weight: 600;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-weekdays {
+  margin-bottom: 0.375rem;
+}
+
+.calendar-weekdays span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.625rem;
+  font-size: 1.03rem;
+  font-weight: 600;
+  color: #8a8a8a;
+}
+
+.calendar-grid {
+  row-gap: 0.1875rem;
+}
+
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  height: 3rem;
+  border: none;
+  border-radius: 0.85rem;
+  background: none;
+  color: #ececec;
+  cursor: pointer;
+}
+
+.calendar-day-number {
+  font-size: 1.03rem;
+  line-height: 1;
+}
+
+.calendar-day:hover:not(:disabled):not(.is-selected) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.calendar-day.is-outside {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.calendar-day.is-today {
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.calendar-day.is-today .calendar-day-number {
+  font-weight: 700;
+}
+
+.calendar-day.is-selected {
+  background: #ececec;
+  color: #101010;
+}
+
+.calendar-day.is-selected .calendar-day-number {
+  font-weight: 700;
+}
+
+.calendar-day:disabled {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.calendar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.125rem;
+  margin-top: 1.5rem;
+  padding-top: 1.125rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.21875rem;
+  color: #b5b5b5;
+}
+
+.calendar-confirm-btn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.35rem;
+  background: #ececec;
+  color: #101010;
+  font-weight: 700;
+  font-size: 1.21875rem;
+  cursor: pointer;
+}
+
+.calendar-confirm-btn:hover:not(:disabled) {
+  background: #ffffff;
+}
+
+.calendar-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#phone-overlay {
+  z-index: 5010;
+}
+
+.phone-helper {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #8a8a8a;
+}
+
+.phone-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.75rem;
+  background: #101010;
+  color: #ececec;
+  font-size: 1.0625rem;
+  font-family: inherit;
+}
+
+.phone-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.phone-error {
+  font-size: 0.9375rem;
+  color: #f87171;
+}
+
+#thankyou-overlay {
+  z-index: 5020;
+}
+
+.thankyou-message {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: #d4d4d4;
+}
+
+.thankyou-footer {
+  justify-content: flex-end;
+}
+
+@media (max-width: 480px) {
+  .calendar-overlay {
+    padding: 0.75rem;
+  }
+  .calendar-modal {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* Calendar on the left; the time list slides in on the right once a date is picked. */
+.calendar-overlay { overflow-y: auto; }
+
+.booking-layout {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1.25rem;
+  width: 100%;
+  margin: auto;
+}
+
+.booking-layout > .calendar-modal { flex: 0 1 480px; }
+
+.time-panel {
+  display: none;
+  flex: 0 1 300px;
+}
+
+.booking-layout.has-date .time-panel {
+  display: flex;
+  flex-direction: column;
+  animation: time-panel-in 0.25s ease;
+}
+
+@keyframes time-panel-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.time-sub {
+  margin: -0.75rem 0 1rem;
+  font-size: 1rem;
+  color: #8a8a8a;
+}
+
+/* One scrolling column of times; it fills whatever height the calendar card has. */
+.time-grid {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  margin-right: -0.5rem;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.time-grid::-webkit-scrollbar { width: 6px; }
+.time-grid::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 3px; }
+
+.time-footer { justify-content: stretch; }
+.time-footer .calendar-confirm-btn { width: 100%; }
+
+.calendar-footer-center { justify-content: center; text-align: center; }
+
+.time-slot {
+  flex: none;
+  height: 2.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.65rem;
+  background: none;
+  color: #ececec;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.time-slot:hover:not(:disabled):not(.is-selected) { background: rgba(255, 255, 255, 0.08); }
+.time-slot.is-selected { background: #ececec; border-color: #ececec; color: #101010; font-weight: 700; }
+.time-slot:disabled { border-color: rgba(255, 255, 255, 0.07); color: rgba(255, 255, 255, 0.2); cursor: not-allowed; }
+
+@media (max-width: 860px) {
+  .booking-layout { flex-direction: column; align-items: center; }
+  .booking-layout > .calendar-modal, .time-panel { flex: none; width: 100%; max-width: 480px; }
+  .time-grid { flex: none; max-height: 16rem; }
+}
+
+/* "Email app didn't open?" fallbacks on the thank-you card */
+.reach-fallback { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.reach-label { margin: 0 0 0.6rem; font-size: 0.95rem; color: #8a8a8a; }
+.reach-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.calendar-secondary-btn {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.75rem;
+  background: none;
+  color: #ececec;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.calendar-secondary-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.reach-address { margin: 0.75rem 0 0; font-size: 0.95rem; color: #b5b5b5; }
+.reach-address a { color: #ececec; }
