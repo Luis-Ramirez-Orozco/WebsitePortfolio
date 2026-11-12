@@ -50,11 +50,13 @@
   .cover .back { inset: 0; background: var(--eb); border-radius: var(--r); box-shadow: inset 0 0 0 1.5px #000; transform: rotateY(180deg) translateZ(calc(var(--t) / 2)); }
   .cover .side {
     top: var(--r); bottom: var(--r); width: calc(var(--t) + 1px);   /* +1px: overlap the faces so no hairline seam shows */ background: var(--eb); color: var(--ef);
-    backface-visibility: visible;
+    backface-visibility: visible; box-shadow: inset 1.5px 0 0 #000, inset -1.5px 0 0 #000;   /* outline only along the front/back rims (not across the ends) */
     display: flex; align-items: center; justify-content: center;
   }
   /* Short strips that wrap each rounded corner, so the edge meets the cover all the way round */
-  .cover .corner { position: absolute; background: var(--eb); }
+  .cover .corner { position: absolute; background: var(--eb); box-shadow: inset 0 1.5px 0 #000, inset 0 -1.5px 0 #000; }   /* matches the card; rims continue round the curve */
+  /* Flat top and bottom edges between the corners, fully outlined so the cap of a light edge doesn't blend into the background */
+  .cover .cap { position: absolute; background: var(--eb); box-shadow: inset 0 0 0 1.5px #000; }
   .cover .side.l { left: calc((var(--t) + 1px) / -2); transform: rotateY(-90deg); }
   .cover .side.r { right: calc((var(--t) + 1px) / -2); transform: rotateY(90deg); }
   /* Title on the edge, like a book spine */
@@ -68,6 +70,15 @@
     color: #fff; font-size: 28px; font-weight: 700; letter-spacing: -.02em;
     background: linear-gradient(160deg, #2b2f4a, #6b3f5c);
   }
+  /* Cards with no live site: blurred, labelled, and not selectable */
+  .cover.disabled .front .media, .cover.disabled .front .fallback { filter: blur(14px) saturate(.8); transform: scale(1.12); }
+  .cover.disabled .front::before {
+    content: "Coming soon"; position: absolute; inset: 0; z-index: 4; display: grid; place-items: center;
+    background: rgba(255,255,255,.18); color: #111; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    font-size: calc(var(--t) * .5 + 6px); text-shadow: 0 1px 8px rgba(255,255,255,.7);
+  }
+  /* Cards that are laid out off-screen at 1280px: keep their painting isolated so scrolling stays smooth */
+  .cover .front { contain: paint; }
   /* Darkens cards the further they are from center */
   .cover .shade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
 
@@ -136,6 +147,7 @@
     text-decoration: none; font-weight: 600; font-size: 13px;
   }
   .bar a:hover { filter: brightness(1.08); }
+  .bar .soon { flex: none; padding: 10px 18px; border-radius: 999px; background: rgba(0,0,0,.08); color: var(--muted); font-weight: 600; font-size: 13px; cursor: not-allowed; user-select: none; }
   .bar .consult {
     flex: none; padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(0,0,0,.18); background: transparent;
     color: var(--fg); font: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
@@ -178,15 +190,15 @@
    ────────────────────────────────────────────── */
 const SITES = [
   /* Sample cards — delete these and add your own */
-  { title: "Atlas Coffee", url: "https://example.com", image: "assets/stock/1.jpg",
+  { title: "Atlas Coffee", url: "", disabled: true, image: "assets/stock/1.jpg",
     edge: "#b49a6d", edgeText: "#111111", tags: "E-commerce", description: "Sample project — replace with your own." },
-  { title: "Northwind Studio", url: "https://example.com", image: "assets/stock/2.jpg",
+  { title: "Northwind Studio", url: "", disabled: true, image: "assets/stock/2.jpg",
     edge: "#b3afc2", edgeText: "#111111", tags: "Agency", description: "Sample project — replace with your own." },
-  { title: "Pine & Co.", url: "https://example.com", image: "assets/stock/3.jpg",
+  { title: "Pine & Co.", url: "", disabled: true, image: "assets/stock/3.jpg",
     edge: "#5d5063", edgeText: "#f5f5f5", tags: "Branding", description: "Sample project — replace with your own." },
-  { title: "Harbor Fitness", url: "https://example.com", image: "assets/stock/4.jpg",
+  { title: "Harbor Fitness", url: "", disabled: true, image: "assets/stock/4.jpg",
     edge: "#d0cbba", edgeText: "#111111", tags: "Web app", description: "Sample project — replace with your own." },
-  { title: "Lumen Labs", url: "https://example.com", image: "assets/stock/5.jpg",
+  { title: "Lumen Labs", url: "", disabled: true, image: "assets/stock/5.jpg",
     edge: "#48474a", edgeText: "#f5f5f5", tags: "Landing page", description: "Sample project — replace with your own." },
   { title: "Get To Know Me", url: "https://luis-ramirez-orozco.github.io/GetToKnowMe/", cover: "gtkm",
     edge: "#f5f5f7", edgeText: "#1d1d1f", tags: "Personal site", description: "Engineering portfolio and projects." },
@@ -196,10 +208,8 @@ const SITES = [
     edge: "#ebe9e5", edgeText: "#17171a", tags: "Business site", description: "LED robot shows for Orange County events." },
   { title: "Photobooth", url: "https://luis-ramirez-orozco.github.io/photobooth/", image: "shots/photobooth.jpg", fit: "cover", position: "top",
     edge: "#241a2a", edgeText: "#f1ecff", tags: "Business site", description: "Photo booth rentals for events across LA." },
-  { title: "Field Notes", url: "https://example.com", image: "assets/stock/6.jpg",
+  { title: "Field Notes", url: "", disabled: true, image: "assets/stock/6.jpg",
     edge: "#8d8c89", edgeText: "#f5f5f5", tags: "Blog", description: "Sample project — replace with your own." },
-  { title: "Orbit Music", url: "https://example.com", image: "assets/stock/7.jpg",
-    edge: "#7291bc", edgeText: "#111111", tags: "Music", description: "Sample project — replace with your own." },
 ];
 
 /* Tunables */
@@ -217,7 +227,7 @@ const OPEN_GAP = 0.62;     // how far neighbours slide aside when a card is open
 const RADIUS = 0.024;       // corner rounding, fraction of card width
 const CORNER_STEPS = 5;    // segments used to wrap each rounded corner
 const THICKNESS = 0.035;    // card thickness, fraction of card width
-const EASE = 0.0085;       // per millisecond; frame-rate independent
+const EASE = 0.0055;       // per millisecond; frame-rate independent
 const DESIGN_W = 1280;     // recreations are laid out 1280px wide (height = 1280 / ASPECT) and scaled down
 const VIDEO_RANGE = 2.5;   // videos play while the card is within this many cards of the center
 
@@ -330,7 +340,8 @@ const covers = SITES.map((s, i) => {
   const el = document.createElement('div');
   el.className = 'cover';
   el.setAttribute('role', 'button');
-  el.setAttribute('aria-label', s.title);
+  el.setAttribute('aria-label', s.title + (s.disabled ? ' (coming soon)' : ''));
+  if (s.disabled) { el.classList.add('disabled'); el.setAttribute('aria-disabled', 'true'); }
   el.style.display = 'none';
   el.style.setProperty('--eb', s.edge || '#222');
   el.style.setProperty('--ef', s.edgeText || '#fff');
@@ -362,7 +373,8 @@ const covers = SITES.map((s, i) => {
   const side = cls => { const d = document.createElement('div'); d.className = 'side ' + cls; d.appendChild(document.createElement('span')).textContent = s.title; return d; };
   el._corners = [];
   for (let k = 0; k < 4 * CORNER_STEPS; k++) { const c = document.createElement('div'); c.className = 'corner'; el._corners.push(c); }
-  el.append(front, back, side('l'), side('r'), ...el._corners);
+  el._caps = [0, 1].map(() => { const c = document.createElement('div'); c.className = 'cap'; return c; });
+  el.append(front, back, side('l'), side('r'), ...el._corners, ...el._caps);
   el._front = front; el._shade = shade;
 
   world.appendChild(el);
@@ -389,6 +401,11 @@ function measure() {
 
     // Lay out the corner-wrapping segments along each quarter circle
     const r = W * RADIUS, t = W * THICKNESS;
+    el._caps.forEach((c, k) => {
+      const q = c.style;
+      q.left = r - 0.5 + 'px'; q.width = W - 2 * r + 1 + 'px'; q.height = t + 1 + 'px';
+      q.top = (k ? H : 0) - (t + 1) / 2 + 'px'; q.transform = 'rotateX(90deg)';
+    });
     [[r, r, 180], [W - r, r, 270], [W - r, H - r, 0], [r, H - r, 90]].forEach(([cx, cy, a0], c) => {
       for (let k = 0; k < CORNER_STEPS; k++) {
         const a = (a0 + 90 * k / CORNER_STEPS) * Math.PI / 180, b = (a0 + 90 * (k + 1) / CORNER_STEPS) * Math.PI / 180;
@@ -442,7 +459,8 @@ function layout(p) {
 
     const sc = isOpen ? 1 + (openS - 1) * turn : 1;
     el.style.transform = `translate3d(${x}px,0,${z}px) rotateY(${rot}deg)` + (sc !== 1 ? ` scale(${sc})` : '');
-    el._shade.style.opacity = isOpen ? 0 : Math.min(ad, 5) * 0.05;
+    const sh = isOpen ? 0 : Math.min(ad, 5) * 0.05;
+    if (el._sh !== sh) { el._sh = sh; el._shade.style.opacity = sh; }
 
     // Videos only play while near the center (saves CPU/battery and keeps scrolling smooth)
     if (el._video) {
@@ -465,7 +483,9 @@ function setBar(i) {
     const h = document.createElement('h2'); h.textContent = s.title;
     const p = document.createElement('p'); p.textContent = [s.tags, s.description].filter(Boolean).join(' — ');
     meta.append(h, p);
-    const a = document.createElement('a'); a.textContent = 'Visit site ↗'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+    let a;
+    if (s.disabled) { a = document.createElement('span'); a.className = 'soon'; a.textContent = 'Coming soon'; }
+    else { a = document.createElement('a'); a.textContent = 'Visit site ↗'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; }
     const c = document.createElement('button'); c.type = 'button'; c.className = 'consult'; c.textContent = 'Book a Consult';
     c.addEventListener('click', () => window.openConsultCalendar && window.openConsultCalendar());
     bar.append(meta, c, a);
@@ -512,7 +532,7 @@ stage.addEventListener('pointerleave', () => pointer = null);
 function liveLoop(now) {
   const t = now / 1000;
   covers.forEach((el, i) => {
-    if (el._live && Math.abs(pos - i) < 5) el._live.tick(t, i === openIdx && open > .5 ? pointer : null);
+    if (el._live && Math.abs(pos - i) < 2.5) el._live.tick(t, i === openIdx && open > .5 ? pointer : null);
   });
   requestAnimationFrame(liveLoop);
 }
@@ -542,6 +562,7 @@ addEventListener('keydown', e => {
   else if (k === 'Escape') close();
   else if (k === 'Enter' || k === ' ') {
     e.preventDefault();
+    if (SITES[index].disabled) return;
     if (wantOpen === index && open > .9) window.open(SITES[index].url, '_blank', 'noopener');
     else { wantOpen = index; kick(); }
   }
@@ -550,6 +571,7 @@ addEventListener('keydown', e => {
 /* Selecting a card. Handled on pointer-up using the card that was pressed: cards keep moving
    under the cursor, so a normal click event can land on a different element and be dropped. */
 function activate(i) {
+  if (SITES[i].disabled) return;   // placeholder cards can't be selected
   lastActivate = performance.now();
   wheelLocked = true;
   if (wantOpen === i && open > .9) window.open(SITES[i].url, '_blank', 'noopener');
