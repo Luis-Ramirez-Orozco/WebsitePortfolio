@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workout Tracker (demo)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .tab-btn[aria-selected="true"] { background:#0f172a; color:#fff; }
+  input[type=number], input[type=date], input[type=text] { min-width:0; }
+  /* phone browsers give date fields a minimum width that can push past the screen; this keeps them inside their box */
+  input[type=date] { -webkit-appearance:none; appearance:none; display:block; max-width:100%; min-height:2.25rem; }
+  /* 16px keeps iOS from zooming into a field on focus */
+  input, select, textarea { font-size:16px !important; }
+  @media print { .no-print { display:none !important; } }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+<div class="mx-auto max-w-3xl px-4 pb-36">
+
+  <header class="py-6">
+    <h1 class="text-2xl font-bold">Bulk plan: 156 → 180 lb</h1>
+    <p class="text-sm text-slate-600">Demo · sample data · beginner · full gym · 5 days/week</p>
+    <p class="mt-1 text-xs text-slate-500"><span id="sync" role="status"></span> <button id="demo-reset" type="button" class="underline">Reset demo</button></p>
+  </header>
+
+  <nav class="flex flex-wrap gap-2 pb-2 no-print" role="tablist">
+    <button class="tab-btn rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium whitespace-nowrap" data-tab="plan" aria-selected="true">Plan</button>
+    <button class="tab-btn rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium whitespace-nowrap" data-tab="log" aria-selected="false">Workout log</button>
+    <button class="tab-btn rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium whitespace-nowrap" data-tab="body" aria-selected="false">Weight</button>
+    <button class="tab-btn rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium whitespace-nowrap" data-tab="food" aria-selected="false">Nutrition</button>
+  </nav>
+
+  <!-- PLAN -->
+  <section id="tab-plan" class="mt-4 space-y-4">
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Weekly schedule</h2>
+      <div class="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
+        <div class="rounded bg-amber-100 py-2"><b>Mon</b><br>Legs</div>
+        <div class="rounded bg-sky-100 py-2"><b>Tue</b><br>Push</div>
+        <div class="rounded bg-emerald-100 py-2"><b>Wed</b><br>Pull</div>
+        <div class="rounded bg-slate-100 py-2 text-slate-500"><b>Thu</b><br>Rest</div>
+        <div class="rounded bg-teal-100 py-2"><b>Fri</b><br>Core</div>
+        <div class="rounded bg-violet-100 py-2"><b>Sat</b><br>Target</div>
+        <div class="rounded bg-slate-100 py-2 text-slate-500"><b>Sun</b><br>Rest</div>
+      </div>
+      <p class="mt-3 text-sm text-slate-600">Rest 2–3 min on compounds, 60–90 s on isolation lifts. Take most sets to 0–3 reps in reserve. Keep sessions under ~75 minutes.</p>
+    </div>
+    <div id="plan-volume" class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"></div>
+    <div id="plan-days" class="space-y-4"></div>
+    <div class="rounded-xl bg-white p-4 text-sm shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">How to progress</h2>
+      <ul class="mt-2 list-disc space-y-1 pl-5 text-slate-700">
+        <li>When you hit the top of the rep range on every set, add the smallest weight jump available next time.</li>
+        <li>Add a set to a muscle only after progress stalls for 2–3 weeks.</li>
+        <li>Volume is 6–10 sets per muscle per week by your choice. That is the low end of the 10–20 range <a class="underline" href="https://barbend.com/scientifically-correct-number-sets-per-workout">BarBend</a> suggests, and what <a class="underline" href="https://www.dotmoovs.com/articles/hypertrophy-training-rep-ranges-volume-and-rest-that-actually-build-muscle">Dotmoovs</a> calls the minimum effective dose. A trial in trained men found more sets grew more muscle, so add sets if progress stalls.</li>
+        <li>Focus on technique over load for the first six months.</li>
+        <li>Targets use straight sets: the same weight on every set, with a rep goal inside the plan's range. The research behind that: moderate loads build muscle about as well as heavy ones when sets are hard (<a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7927075/">Schoenfeld 2021</a>, <a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3404827">Mitchell 2012</a>), 6–15 reps is the practical range (<a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8449772">Iversen 2021</a>), training to failure on every set is not needed but sets should end close to it (<a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9935748">Refalo 2023</a>), and ramping weights up across sets is no better than straight sets at equal volume. The starting weight is the Epley estimate for the goal reps with about 2 reps left, so most weights are my estimates (marked "estimate"); adjust them in week 1. Warm-up sets are listed separately and are not counted as working sets.</li>
+        <li>Next week's weight comes from your last set of that exercise, using a rule of my own: that set's weight becomes the weight for every set. If you hit the rep goal on it, the weight rises to what Epley (1-rep max ≈ weight × (1 + reps ÷ 30)) says you could lift for the goal reps, at least +5 lb, rounded to 5. If you fall short, you repeat that weight. For example, a last set of 200 lb × 8 against a goal of 8 makes next week 205 lb × 8 on every set. Assisted pull-ups lower the assistance by 5 lb, and bodyweight moves add a rep or a second. Epley gets less accurate above about 12 reps.</li>
+        <li>You don't know your weights yet, so tap <b>Change</b> next to any target in the Workout log to set your own weight or rep goal. It applies to that session and the ones after it, until you log a session on or after that day, and then the last-set rule takes over again. <b>Back to suggested</b> removes it.</li>
+        <li>Each muscle is trained once a week on its own day, with 6–7 sets per muscle per session (about the 6–8 hard sets per session that <a class="underline" href="https://weightology.net/?p=4417">Weightology</a> describes). The same sources find frequency matters less than weekly volume, with a slight edge for training a muscle twice when volume is high. Use Target day to hit a lagging muscle a second time.</li>
+        <li>Friday is Core. Saturday is a Target day: a free choice of any muscle and exercise. Its sets are not counted in the weekly totals above.</li>
+        <li>If you're sore beyond 72 hours or keep missing days, skip the Target day first.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="tab-log" class="mt-4 hidden space-y-4">
+    <div class="flex flex-wrap items-end gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <label class="text-sm">Date<br><input id="log-date" type="date" class="mt-1 rounded border border-slate-300 px-2 py-1"></label>
+      <label class="text-sm">Workout<br>
+        <select id="log-day" class="mt-1 rounded border border-slate-300 px-2 py-1">
+          <option value="0">Legs</option><option value="1">Push</option><option value="2">Pull</option>
+          <option value="3">Core</option><option value="4">Target</option>
+        </select></label>
+    </div>
+    <div id="log-rows" class="space-y-3"></div>
+    <p class="text-xs text-slate-500">Saved automatically in this browser only.</p>
+  </section>
+
+  <!-- BODY -->
+  <section id="tab-body" class="mt-4 hidden space-y-4">
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <div class="flex items-baseline justify-between">
+        <h2 class="font-semibold">Progress to 180 lb</h2>
+        <span id="bw-now" class="text-sm text-slate-600"></span>
+      </div>
+      <div class="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-200"><div id="bw-bar" class="h-full bg-emerald-500" style="width:0%"></div></div>
+      <div class="mt-4 flex flex-wrap items-end gap-3">
+        <label class="text-sm">Date<br><input id="bw-date" type="date" class="mt-1 rounded border border-slate-300 px-2 py-1"></label>
+        <label class="text-sm">Weight (lb)<br><input id="bw-val" type="number" step="0.1" class="mt-1 w-28 rounded border border-slate-300 px-2 py-1"></label>
+        <button id="bw-add" class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">Add</button>
+      </div>
+      <p class="mt-2 text-xs text-slate-500">Weigh in each morning, same conditions. Weekly averages drive the calorie advice.</p>
+    </div>
+    <div id="bw-advice" class="hidden rounded-xl bg-sky-50 p-4 text-sm ring-1 ring-sky-200"></div>
+    <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-100 text-left text-xs text-slate-600"><tr><th class="px-3 py-2">Week</th><th class="px-3 py-2">Avg (lb)</th><th class="px-3 py-2">Change</th><th class="px-3 py-2">Entries</th></tr></thead>
+        <tbody id="bw-weeks"></tbody>
+      </table>
+    </div>
+    <details class="rounded-xl bg-white p-4 text-sm shadow-sm ring-1 ring-slate-200">
+      <summary class="cursor-pointer font-medium">All weigh-ins</summary>
+      <ul id="bw-list" class="mt-2 divide-y divide-slate-100"></ul>
+    </details>
+  </section>
+
+  <!-- FOOD -->
+  <section id="tab-food" class="mt-4 hidden space-y-4">
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Daily targets</h2>
+      <p class="mt-1 text-xs text-slate-500">Pick how fast you want to gain and which day you are logging. The rate sets your targets. The date sets which day the meal log shows and where new meals are saved.</p>
+      <div class="mt-3 grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+        <label class="block min-w-0 text-xs text-slate-500">Gain rate
+          <select id="rate-select" class="mt-1 block w-full min-w-0 rounded-full border border-slate-300 bg-white py-1.5 pl-4 pr-8 text-sm font-medium text-slate-900"><option value="0.5">0.5 lb/week</option><option value="1">1 lb/week</option><option value="1.5">1.5 lb/week</option><option value="2">2 lb/week</option></select>
+        </label>
+        <label class="block min-w-0 text-xs text-slate-500">Date
+          <input id="meal-date" type="date" class="mt-1 block w-full min-w-0 max-w-full overflow-hidden rounded-full border border-slate-300 bg-white px-3 py-1 text-sm font-medium text-slate-900">
+        </label>
+      </div>
+      <dl class="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        <div class="rounded bg-slate-50 p-3"><dt class="text-xs text-slate-500">Calories</dt><dd id="t-kcal" class="text-lg font-bold"></dd></div>
+        <div class="rounded bg-slate-50 p-3"><dt class="text-xs text-slate-500">Protein</dt><dd id="t-protein" class="text-lg font-bold"></dd></div>
+        <div class="rounded bg-slate-50 p-3"><dt class="text-xs text-slate-500">Creatine</dt><dd class="text-lg font-bold">3–5 g</dd></div>
+        <div class="rounded bg-slate-50 p-3"><dt class="text-xs text-slate-500">Gain rate</dt><dd id="t-rate" class="text-lg font-bold"></dd></div>
+      </dl>
+      <p id="rate-detail" class="mt-3 text-xs text-slate-600"></p>
+      <p id="rate-warn" class="mt-2 hidden rounded bg-amber-50 p-2 text-xs text-amber-900 ring-1 ring-amber-200"></p>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <div class="flex items-center justify-between gap-3"><h2 class="font-semibold">Meal log</h2><button id="ml-build" class="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-xs font-medium text-white">Build a meal ↓</button></div>
+      <p id="ml-date-label" class="text-xs text-slate-500"></p>
+      <div id="ml-day" class="mt-3 space-y-2"></div>
+      <div id="ml-list" class="mt-3 space-y-3"></div>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Carbs and protein per portion</h2>
+      <p class="mt-1 text-xs text-slate-500">Pick what you want to eat and add up the columns (carbs and protein in grams, calories in kcal), sort or filter the list, or tap + to add a food to the meal builder at the bottom of this card. Anything you add under "Add something not listed" is saved in a My foods group at the top of this list. Portions follow the <a class="underline" href="https://cdc.gov/diabetes/healthy-eating/carbohydrate-lists-starchy-foods.html">CDC</a> and <a class="underline" href="https://healthy.kaiserpermanente.org/health-wellness/health-encyclopedia/he.aa15595">Kaiser Permanente</a> carb lists (grains, starchy vegetables and beans are measured cooked). The grams and calories come from the USDA FoodData Central SR Legacy database, which I calculated for each portion. Carbs are total carbs including fiber. Brands and recipes vary, so check labels.</p>
+      <div class="mt-3 grid grid-cols-1 gap-2 min-[460px]:grid-cols-2">
+        <label class="block min-w-0 text-xs">Show<select id="food-cat" class="mt-1 block w-full min-w-0 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"></select></label>
+        <label class="block min-w-0 text-xs">Sort by<select id="food-sort" class="mt-1 block w-full min-w-0 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"><option value="default">Food group (default)</option><option value="c-asc">Carbs: low to high</option><option value="c-desc">Carbs: high to low</option><option value="p-desc">Protein: high to low</option><option value="k-asc">Calories: low to high</option></select></label>
+      </div>
+      <div id="food-table"></div>
+      <p class="mt-4 text-xs text-slate-500">Whey protein varies by brand: read the label, or add it as a custom item in the builder. Non-starchy vegetables are about 5 g of carbs per cup raw or ½ cup cooked (Kaiser Permanente). Beans, lentils, oats, quinoa and sweet potato are fiber-rich picks that pair well with protein or fat.</p>
+
+      <div id="meal-builder" class="mt-6 rounded-lg bg-slate-50 p-3">
+        <h3 class="font-semibold">Build meal</h3>
+        <p class="mt-1 text-xs text-slate-500">Tap + next to any food above, or pick one here. Amounts are in portions, the size shown in the table (3 × ⅓ cup rice is 1 cup).</p>
+        <div class="mt-3 flex gap-2">
+          <select id="mb-pick" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1.5"></select>
+          <button id="mb-add" class="shrink-0 rounded bg-slate-900 px-4 py-1.5 text-sm font-medium text-white">Add</button>
+        </div>
+        <div id="mb-items" class="mt-2 divide-y divide-slate-200"></div>
+        <div id="mb-totals" class="mt-2 grid grid-cols-3 gap-2 text-center text-sm"></div>
+        <details class="mt-3 text-sm">
+          <summary class="cursor-pointer">Add something not listed (saved to My foods)</summary>
+          <div class="mt-2 grid grid-cols-3 gap-2">
+            <input id="cu-name" type="text" placeholder="Name" class="col-span-3 rounded border border-slate-300 bg-white px-2 py-1">
+            <input id="cu-c" type="number" inputmode="decimal" placeholder="Carbs g" class="rounded border border-slate-300 bg-white px-2 py-1">
+            <input id="cu-p" type="number" inputmode="decimal" placeholder="Protein g" class="rounded border border-slate-300 bg-white px-2 py-1">
+            <input id="cu-k" type="number" inputmode="decimal" placeholder="Calories" class="rounded border border-slate-300 bg-white px-2 py-1">
+            <button id="cu-add" class="col-span-3 rounded border border-slate-300 bg-white px-3 py-1.5">Add item</button>
+            <p id="cu-msg" class="col-span-3 text-xs text-emerald-700" role="status"></p>
+          </div>
+        </details>
+        <label class="mt-4 block min-w-0 text-xs">Meal<select id="meal-type" class="mt-1 block w-full min-w-0 rounded border border-slate-300 bg-white px-2 py-1"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Pre-workout</option><option>Post-workout</option></select></label>
+        <p id="mb-date-note" class="mt-2 text-xs text-slate-500"></p>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button id="mb-save" class="rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white">Save to log</button>
+          <button id="mb-clear" class="rounded border border-slate-300 bg-white px-3 py-2 text-sm">Clear meal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">How these targets work</h2>
+      <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
+        <li><b>Calories:</b> maintenance at age 30 is about 2,570 kcal (Mifflin-St Jeor × 1.55, my estimate). The target adds about 500 kcal a day for each pound a week you want to gain, a common rule of thumb that isn't from the sources I fetched. For comparison, <a class="underline" href="https://bonytobeastly.com/how-fast-to-gain-weight-bulking/">Bony to Beastly</a> suggests a 200–400 kcal surplus for 0.5–1 lb a week and <a class="underline" href="https://forum.barbellmedicine.com/t/how-much-of-a-calorie-surplus-for-a-lean-bulk/6332">Dr. Feigenbaum</a> suggests 250–500 kcal. Add ~200 kcal if your weekly average hasn't moved in two weeks; cut ~100 if you gain faster than your chosen rate or gain fat.</li>
+        <li><b>Protein:</b> with normal kidney function, the <a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/">ISSN range</a> is 1.4–2.0 g/kg, and summaries of the Morton meta-analysis put the benefit plateau near 1.6 g/kg with an upper range near 2.2 g/kg. That research ties protein to body weight, not to how fast you gain, so I stepped the target from 1.6 g/kg at 0.5 lb/week up to 2.2 g/kg at 2 lb/week, inside the supported range. That scaling is my choice. It uses your latest logged weight.</li>
+        <li><b>Creatine:</b> 3–5 g a day is the <a class="underline" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5469049/">ISSN</a> maintenance dose, the same at every gain rate. It adds a few pounds of water early. That isn't fat.</li>
+        <li><b>Spread it out:</b> 4–5 meals of roughly 20–35 g protein, every 3–4 hours at consistent times.</li>
+      </ul>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Carb budget</h2>
+      <p id="carb-budget" class="mt-2 text-sm text-slate-700"></p>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Meal examples</h2>
+      <p class="text-xs text-slate-500">Totals are summed from the table above (plus 5 g for vegetables where listed). Protein shown is from the foods counted.</p>
+      <div class="mt-3 space-y-4 text-sm">
+        <div><b>Breakfast · 56–61 g carbs</b>
+          <ul class="mt-1 list-disc pl-5 text-slate-700">
+            <li>1 cup cooked oatmeal + 1 small apple + 1 cup whole milk + 3 scrambled eggs = <b>56 g carbs</b> · 33 g protein</li>
+            <li>3 slices whole-wheat toast + ½ banana + 3 eggs + 1 cup raw peppers or spinach = <b>61 g carbs</b> · 31 g protein</li>
+            <li>¾ cup plain yogurt + 1½ cups Cheerios-type cereal + ½ banana (plus a scoop of whey, not counted) = <b>57 g carbs</b> · 15 g protein</li></ul></div>
+        <div><b>Lunch · 67–70 g carbs</b>
+          <ul class="mt-1 list-disc pl-5 text-slate-700">
+            <li>Chicken burrito bowl: 1 cup white rice + ½ cup black beans + 4 oz chicken breast + 1 cup raw veg = <b>70 g carbs</b> · 47 g protein</li>
+            <li>Turkey wrap: 2 small flour tortillas + ½ cup chickpeas + 1 orange + 4 oz turkey = <b>68 g carbs</b> · 47 g protein</li>
+            <li>Beef pasta: 1⅓ cups cooked pasta + 4 oz ground beef + 1 small apple + side salad = <b>67 g carbs</b> · 39 g protein</li></ul></div>
+        <div><b>Dinner · 75–86 g carbs</b>
+          <ul class="mt-1 list-disc pl-5 text-slate-700">
+            <li>Salmon (4 oz) + 1 cup sweet potato + 1 cup quinoa + cooked greens = <b>86 g carbs</b> · 37 g protein</li>
+            <li>Chicken breast (4 oz) + 1 cup lentils + ⅔ cup white rice + ½ cup cooked veg = <b>75 g carbs</b> · 56 g protein</li>
+            <li>Beef stir-fry (4 oz beef) + 1⅓ cups white rice + 1 orange = <b>80 g carbs</b> · 36 g protein</li></ul></div>
+        <div><b>Snacks · 25–34 g carbs</b>
+          <ul class="mt-1 list-disc pl-5 text-slate-700">
+            <li>Peanut butter sandwich: 2 slices whole-wheat bread + 1 tbsp peanut butter = <b>31 g carbs</b> · 12 g protein</li>
+            <li>¾ cup plain yogurt + ¼ cup granola = <b>29 g carbs</b> · 14 g protein</li>
+            <li>1 banana + 2 tbsp peanut butter = <b>34 g carbs</b> · 8 g protein</li>
+            <li>Shake: 1 cup whole milk + ½ banana (plus a scoop of whey, not counted) = <b>25 g carbs</b> · 8 g protein</li></ul></div>
+        <div><b>Around training</b>
+          <ul class="mt-1 list-disc pl-5 text-slate-700">
+            <li><b>Before:</b> a small carb-and-protein snack works for most people, such as a banana with peanut butter.</li>
+            <li><b>After:</b> a shake with 1 cup whole milk and a whole banana (39 g carbs, 9 g protein) plus whey, then a normal meal. Delayed lows can follow training, so ask your team about the bedtime plan.</li></ul></div>
+      </div>
+    </div>
+
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <h2 class="font-semibold">Fat sources and heavy meals</h2>
+      <p class="mt-2 text-sm text-slate-700"><b>Fat:</b> olive oil, nuts and nut butter, avocado, cheese, fatty fish, whole eggs. These are common choices, not from the sources above. Protein foods are in the table above.</p>
+    </div>
+    <p class="text-xs text-slate-500">Portion sizes come from the CDC and Kaiser lists. Carb and protein grams are calculated from USDA FoodData Central, and meal totals are my sums. Not medical advice. This is a demo with sample numbers.</p>
+  </section>
+
+
+
+  <div id="mb-bar" class="fixed z-20 mx-auto hidden max-w-3xl rounded-2xl border border-slate-300 bg-white shadow-lg" style="left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); padding: 8px 10px 8px 14px">
+    <div class="flex items-center gap-3">
+      <div class="min-w-0 flex-1"><div id="mb-bar-count" class="text-[11px] text-slate-500"></div><div id="mb-bar-text" class="text-xs font-medium"></div></div>
+      <button id="mb-bar-go" class="shrink-0 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Review meal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const O = (name, start = null, note = "") => ({ name, start, note });
+// every exercise you can pick for a muscle, machines and accessories included (start = lb, null if unknown)
+const MUSCLES = {
+  "Quads": [O("Barbell back squat",145,"estimated from your 185 × 4"),O("Leg press"),O("Hack squat"),O("Smith machine squat"),O("Goblet squat"),O("Leg extension"),O("Walking lunge",null,"bodyweight first"),O("Reverse lunge",null,"bodyweight first"),O("Split squat",null,"bodyweight first"),O("Bulgarian split squat",null,"bodyweight first"),O("Step-up",null,"bodyweight first")],
+  "Hamstrings & glutes": [O("Romanian deadlift"),O("Dumbbell Romanian deadlift"),O("Hip thrust"),O("45° back extension"),O("Seated leg curl"),O("Lying leg curl")],
+  "Calves": [O("Standing calf raise"),O("Seated calf raise"),O("Leg press calf raise")],
+  "Chest": [O("Barbell bench press",85,"estimated from your 95 × 10"),O("Dumbbell bench press",30,"per dumbbell, estimated from your 35 lb × 8"),O("Machine chest press"),O("Smith machine bench press"),O("Incline dumbbell press",25,"per dumbbell, estimated from your flat dumbbell press"),O("Incline barbell press"),O("Incline machine press"),O("Cable fly"),O("Push-ups")],
+  "Shoulders": [O("Seated dumbbell shoulder press",20,"per dumbbell, provisional"),O("Machine shoulder press",null,"you mentioned ~95 lb; start lighter and log your reps"),O("Barbell overhead press"),O("Dumbbell lateral raise",15,"per dumbbell, your usual"),O("Cable lateral raise"),O("Machine lateral raise")],
+  "Triceps": [O("Cable pushdown"),O("Overhead dumbbell extension",10,"one dumbbell, your usual"),O("Overhead cable extension"),O("Assisted dips")],
+  "Lats": [O("Lat pulldown"),O("Assisted pull-up",null,"you can do 2 unassisted; pick assistance for ~8 reps"),O("Neutral-grip pulldown")],
+  "Upper back": [O("Seated cable row"),O("Chest-supported row"),O("One-arm dumbbell row"),O("Machine row"),O("Face pull"),O("Reverse pec deck"),O("Cable rear delt fly")],
+  "Biceps": [O("Dumbbell curl"),O("Cable curl"),O("EZ-bar curl"),O("Hammer curl"),O("Machine curl")],
+  "Core": [O("Cable crunch"),O("Machine crunch"),O("Decline sit-up"),O("Hanging knee raise"),O("Hanging leg raise"),O("Captain's chair knee raise"),O("Ab wheel rollout"),O("Plank",null,"hold time: log seconds in the reps box"),O("Side plank",null,"hold time: log seconds in the reps box"),O("Pallof press"),O("Dead bug")],
+};
+// group: muscle category, plain-language focus, sets, reps, suggested exercise (def).
+// Weekly sets per muscle are kept to 6-10; the Plan tab totals them.
+const DAYS = [
+  // Slots are saved by their position in `groups`, so existing days only ever get new groups added at the end.
+  { name:"Legs", color:"amber", groups:[
+    { m:"Quads", sub:"main lift", sets:4, reps:"6–10", def:"Barbell back squat" },
+    { m:"Hamstrings & glutes", sub:"main lift", sets:3, reps:"8–10", def:"Romanian deadlift" },
+    { m:"Quads", sub:"second lift", sets:3, reps:"10–12", def:"Leg press" },
+    { m:"Hamstrings & glutes", sub:"curl", sets:3, reps:"10–12", def:"Seated leg curl" },
+    { m:"Calves", sub:"standing", sets:3, reps:"10–15", def:"Standing calf raise" },
+    { m:"Calves", sub:"seated", sets:3, reps:"10–15", def:"Seated calf raise" },
+  ]},
+  { name:"Push", color:"sky", groups:[
+    { m:"Chest", sub:"main lift", sets:3, reps:"6–10", def:"Barbell bench press" },
+    { m:"Chest", sub:"second lift", sets:3, reps:"8–12", def:"Incline dumbbell press" },
+    { m:"Shoulders", sub:"press", sets:3, reps:"8–12", def:"Seated dumbbell shoulder press" },
+    { m:"Shoulders", sub:"raise", sets:3, reps:"12–15", def:"Dumbbell lateral raise" },
+    { m:"Triceps", sub:"pushdown", sets:3, reps:"10–15", def:"Cable pushdown" },
+    { m:"Triceps", sub:"overhead", sets:3, reps:"10–15", def:"Overhead dumbbell extension" },
+  ]},
+  { name:"Pull", color:"emerald", groups:[
+    { m:"Lats", sub:"main lift", sets:3, reps:"8–12", def:"Lat pulldown" },
+    { m:"Upper back", sub:"row", sets:4, reps:"8–12", def:"Seated cable row" },
+    { m:"Upper back", sub:"rear shoulders", sets:2, reps:"12–15", def:"Face pull" },
+    { m:"Biceps", sub:"main lift", sets:3, reps:"10–12", def:"Dumbbell curl" },
+    { m:"Lats", sub:"second lift", sets:3, reps:"8–12", def:"Assisted pull-up" },
+    { m:"Biceps", sub:"second lift", sets:3, reps:"10–12", def:"Hammer curl" },
+  ]},
+  { name:"Core", color:"teal", groups:[
+    { m:"Core", sub:"crunch", sets:3, reps:"10–15", def:"Cable crunch" },
+    { m:"Core", sub:"leg raise", sets:3, reps:"10–15", def:"Hanging knee raise" },
+    { m:"Core", sub:"hold, in seconds", sets:3, reps:"30–45 s", def:"Plank" },
+  ]},
+  // Free choice: no planned exercises. Pick any muscle, then any exercise, and set how many sets you want.
+  { name:"Target", color:"violet", free:true, groups:[] },
+];
+DAYS.forEach(d => d.groups.forEach(g => { g.opts = MUSCLES[g.m]; }));
+const DAYLABEL = ["Mon","Tue","Wed","Fri","Sat"];
+const FIND = "Day 1: find a weight with 2–3 reps left at the top of the range";
+const startText = o => o.start != null
+  ? `Start ~${o.start} lb${o.note ? " · " + o.note : ""}`
+  : (o.note || FIND);
+// Starting targets: straight sets (the same weight on every set) with a rep goal inside the slot's plan range.
+// Why: moderate loads grow muscle about as well as heavy ones when sets are hard, 6-15 reps is the practical range, most sets should end
+// a couple of reps short of failure, and ramping up (pyramids) is no better than straight sets at equal volume. Warm-up sets are separate and not counted.
+// Start weight = the Epley weight for (goal reps + 2 reps in reserve) from a 1-rep-max estimate. Only the user's own weights are not flagged as estimates.
+// bw = bodyweight (no weight box), unit "s" = seconds held, assist = assisted machine (a lower number is harder), warm = warm-up text.
+const straight = (w, r, n) => Array.from({ length: n }, () => [w, r]);
+const TARGETS = {
+  "Barbell back squat":            { sets: straight(155, 8, 4), est: true, note: "from your 185 × 4", warm: "100×8 · 130×5" },
+  "Romanian deadlift":             { sets: straight(130, 9, 3), est: true, warm: "95×8" },
+  "Leg press":                     { sets: straight(265, 11, 3), est: true, note: "machines differ, so adjust on day 1", warm: "135×8" },
+  "Seated leg curl":               { sets: straight(85, 11, 3), est: true },
+  "Standing calf raise":           { sets: straight(135, 12, 3), est: true },
+  "Seated calf raise":             { sets: straight(90, 12, 3), est: true },
+  "Barbell bench press":           { sets: straight(90, 8, 3), est: true, note: "from your 95 × 10 and 105 × 4", warm: "65×8 · 80×4" },
+  "Incline dumbbell press":        { sets: straight(25, 10, 3), est: true, note: "per dumbbell" },
+  "Seated dumbbell shoulder press":{ sets: straight(25, 10, 3), est: true, note: "per dumbbell" },
+  "Dumbbell lateral raise":        { sets: straight(15, 13, 3), note: "per dumbbell, your usual weight" },
+  "Cable pushdown":                { sets: straight(40, 12, 3), est: true },
+  "Overhead dumbbell extension":   { sets: straight(10, 12, 3), note: "one dumbbell, your usual weight" },
+  "Lat pulldown":                  { sets: straight(90, 10, 3), est: true },
+  "Seated cable row":              { sets: straight(90, 10, 4), est: true },
+  "Face pull":                     { sets: straight(40, 13, 2), est: true },
+  "Dumbbell curl":                 { sets: straight(20, 11, 3), est: true, note: "per dumbbell" },
+  "Assisted pull-up":              { sets: straight(40, 10, 3), est: true, assist: true, note: "assistance in lb: lower is harder" },
+  "Hammer curl":                   { sets: straight(20, 11, 3), est: true, note: "per dumbbell" },
+  "Cable crunch":                  { sets: straight(50, 12, 3), est: true },
+  "Hanging knee raise":            { sets: straight(0, 10, 3), est: true, bw: true, note: "low end of the range, since your level is unknown" },
+  "Plank":                         { sets: straight(0, 30, 3), est: true, bw: true, unit: "s", note: "log seconds in the reps box" },
+};
+const roundTo5 = x => Math.round(x / 5) * 5;
+const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+const fmtSet = (t, s) => t.unit === "s" ? `${s[1]} s` : t.bw ? `${s[1]} reps` : `${s[0]}×${s[1]}`;
+function targetText(t, sets) {
+  const same = sets.every(s => s[0] === sets[0][0] && s[1] === sets[0][1]);
+  const total = sets.reduce((a, s) => a + s[1], 0), unit = t.unit === "s" ? "seconds" : "reps";
+  const body = !same ? sets.map(s => fmtSet(t, s)).join(" · ")
+    : t.unit === "s" ? `${sets.length} × ${sets[0][1]} s`
+    : t.bw ? `${sets.length} × ${sets[0][1]} reps`
+    : `${sets.length} × ${sets[0][1]} @ ${sets[0][0]} lb${t.assist ? " assist" : ""}`;
+  return `${body} — ${total} ${unit} total`;
+}
+const baseTargets = (name, n) => TARGETS[name] ? Array.from({ length: n }, (_, i) => TARGETS[name].sets[Math.min(i, TARGETS[name].sets.length - 1)]) : null;
+// The target for next time, from what was actually done (my own rule; Epley is only an estimate and loses accuracy above ~12 reps):
+// the LAST set entered decides. Its weight becomes the weight for every set next time. If that set hit the rep goal the weight rises to what
+// Epley says you could lift for the goal reps (1RM = w x (1 + reps/30)), at least +5 lb, rounded to 5. If it fell short, the weight is repeated.
+// Assisted: 5 lb less help. Bodyweight or timed: one more rep (or second) after hitting the goal.
+// A target the user set by hand (store.myTargets) wins for the session it was set on and later sessions, until a session is logged on or after that date.
+// cur = the sets done last time (or today) as [{w, r}] strings.
+function goalOf(name) { return store.myTargets[name]?.r ?? TARGETS[name].sets[0][1]; }
+function targetsFor(name, n, cur, ovActive) {
+  const t = TARGETS[name];
+  if (!t) return null;
+  const ov = store.myTargets[name], r0 = goalOf(name), w0 = ovActive ? ov.w : t.sets[0][0];
+  const mk = (w, r) => Array.from({ length: n }, () => [t.bw ? 0 : w, r]);
+  if (ovActive) return { t, sets: mk(w0, r0), complete: false, hit: false, mine: true };
+  let i = (cur?.length ?? 0) - 1;
+  while (i >= 0 && !(cur[i] && num(cur[i].r) && (t.bw || num(cur[i].w)))) i--;
+  if (i < 0) return { t, sets: mk(w0, r0), complete: false, hit: false };
+  const wL = num(cur[i].w), rL = num(cur[i].r), hit = rL >= r0;
+  let next;
+  if (t.bw) next = [0, hit ? rL + 1 : r0];
+  else if (!hit) next = [wL, r0];
+  else if (t.assist) next = [Math.max(0, wL - 5), r0];
+  else next = [Math.max(wL + 5, roundTo5(wL * (1 + rL / 30) / (1 + r0 / 30))), r0];
+  return { t, sets: mk(next[0], next[1]), complete: true, hit, last: { w: wL, r: rL } };
+}
+// the line under a slot as soon as a set is in
+function nextLineText(name, n, cur) {
+  if (!TARGETS[name] || !cur) return "";
+  const tf = targetsFor(name, n, cur, false);
+  if (!tf.complete) return "";
+  const l = tf.last, lastTxt = tf.t.bw ? `${l.r}${tf.t.unit === "s" ? " s" : " reps"}` : `${l.w} lb × ${l.r}`;
+  return `Last set: ${lastTxt}. ` + (tf.hit ? "Hit your reps. Next time: " : "Short of the rep goal. Repeat: ") + targetText(tf.t, tf.sets);
+}
+// the small form to change an exercise's target weight and rep goal
+function targetForm(name, tg, ov) {
+  const t = tg.t, [w, r] = tg.sets[0];
+  return `<div data-target-form class="mt-2 flex flex-wrap items-end gap-2 rounded-lg bg-slate-50 p-2">
+    ${t.bw ? "" : `<label class="text-xs">Weight (lb)<input data-tw type="number" inputmode="decimal" step="2.5" min="0" value="${w}" class="mt-1 block w-24 rounded border border-slate-300 bg-white px-2 py-1"></label>`}
+    <label class="text-xs">${t.unit === "s" ? "Seconds" : "Reps"} per set<input data-tr type="number" inputmode="numeric" min="1" value="${r}" class="mt-1 block w-24 rounded border border-slate-300 bg-white px-2 py-1"></label>
+    <button data-save-target data-ex="${esc(name)}" class="rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Save</button>
+    ${ov ? `<button data-reset-target data-ex="${esc(name)}" class="px-1 text-xs underline">Back to suggested</button>` : ""}
+    <button data-cancel-target class="px-1 text-xs underline">Cancel</button>
+  </div>`;
+}
+const KEY = "bulk-plan-demo-v1";
+let store = {};
+try { store = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e) { store = {}; }
+store.logs ||= {}; store.bw ||= []; store.meals ||= {}; store.prefs ||= {}; store.myFoods ||= []; store.myExercises ||= {}; store.myTargets ||= {};
+
+/* ---- demo: invented training history, created once per browser (kept under its own storage key) ---- */
+(function seedDemo() {
+  let had = false;
+  try { had = localStorage.getItem(KEY) !== null; } catch (e) {}
+  if (had) return;
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const BASE = { "Barbell back squat": 115, "Romanian deadlift": 95, "Leg press": 180, "Seated leg curl": 70, "Standing calf raise": 90, "Seated calf raise": 60,
+    "Barbell bench press": 95, "Incline dumbbell press": 35, "Seated dumbbell shoulder press": 25, "Dumbbell lateral raise": 12, "Cable pushdown": 40, "Overhead dumbbell extension": 30,
+    "Lat pulldown": 85, "Seated cable row": 80, "Face pull": 30, "Dumbbell curl": 20, "Assisted pull-up": 60, "Hammer curl": 20,
+    "Cable crunch": 50, "Hanging knee raise": 0, "Plank": 0 };
+  const dayIndex = { 1: 0, 2: 1, 3: 2, 5: 3 };        // Mon Legs, Tue Push, Wed Pull, Fri Core
+  const now = new Date(); now.setHours(12, 0, 0, 0);
+  for (let back = 28; back >= 1; back--) {
+    const d = new Date(now); d.setDate(d.getDate() - back);
+    const di = dayIndex[d.getDay()];
+    if (di === undefined) continue;
+    const week = Math.floor((28 - back) / 7);           // 0..3: weights creep up each week
+    const groups = {};
+    DAYS[di].groups.forEach((g, gi) => {
+      const base = BASE[g.def] ?? 0, step = base >= 100 ? 5 : base >= 30 ? 2.5 : 1;
+      const w = base ? String(base + step * week) : "";
+      const isHold = g.def === "Plank";
+      const reps = isHold ? ["30", "35", "40"] : g.reps.includes("6") ? ["8", "8", "7"] : ["12", "11", "10"];
+      groups[gi] = { ex: g.def, sets: Array.from({ length: g.sets }, (_, i) => ({ r: reps[i % 3], w: isHold ? "" : w })) };
+    });
+    (store.logs[iso(d)] ||= {})[di] = groups;
+  }
+  // a weigh-in every 3 days, drifting up about 0.4 lb a week with a little noise
+  const noise = [0.0, 0.4, -0.3, 0.2, -0.2, 0.5, -0.1, 0.3, -0.4, 0.1];
+  for (let back = 42, i = 0; back >= 0; back -= 3, i++) {
+    const d = new Date(now); d.setDate(d.getDate() - back);
+    store.bw.push({ d: iso(d), w: Math.round((156 + (42 - back) * 0.1 + noise[i % noise.length]) * 10) / 10 });
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+})();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch(e) {} syncSoon(); };
+const $ = (s, r=document) => r.querySelector(s);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);   // unique even when two are made in the same millisecond
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+// "How to" links open a YouTube search for the exercise (a fixed video link could disappear). Machine exercises add "machine setup" so the results show which machine and how to adjust it.
+const MACHINE_RE = /machine|smith|cable|leg press|hack squat|pulldown|pec deck|assisted|leg curl|leg extension|calf raise/i;
+const howToUrl = name => "https://www.youtube.com/results?search_query=" + encodeURIComponent(`${name} ${MACHINE_RE.test(name) && !/dumbbell|barbell/i.test(name) ? "how to use machine setup and form" : "proper form how to"}`);
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+
+// ---- daily targets by gain rate ----
+const MAINT = 2570;                                                // Mifflin-St Jeor × 1.55 at age 30 (my estimate)
+const PROTEIN_PER_KG = { 0.5: 1.6, 1: 1.8, 1.5: 2.0, 2: 2.2 };    // stepped through the supported 1.6–2.2 g/kg range
+const TARGET = { kcal: 3050, protein: 125 };                       // read by the meal log; applyRate() keeps it current
+let gainRate = 1, targetsReady = false;
+
+// tabs
+document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tab-btn").forEach(x => x.setAttribute("aria-selected", x === b));
+  ["plan","log","body","food"].forEach(t => $("#tab-"+t).classList.toggle("hidden", t !== b.dataset.tab));
+  updateBar();
+}));
+
+// exercises you added yourself are kept per muscle in store.myExercises and listed after the built-in ones
+const withMine = (m, opts) => [...opts, ...(store.myExercises[m] || [])
+  .filter(n => !opts.some(o => o.name.toLowerCase() === n.toLowerCase()))
+  .map(name => ({ name, start: null, note: "", mine: true }))];
+// one card per muscle, in the order it first appears that day; with a date, muscles added on the fly (free days) get cards too
+function muscleCards(d, date, day) {
+  const out = [];
+  d.groups.forEach((g, gi) => {
+    let c = out.find(x => x.m === g.m);
+    if (!c) out.push(c = { m: g.m, opts: withMine(g.m, g.opts), slots: [] });
+    c.slots.push({ key: String(gi), g });
+  });
+  if (date !== undefined)
+    for (const v of Object.values(store.logs[date]?.[day] || {}))
+      if (v?.m && MUSCLES[v.m] && !out.some(x => x.m === v.m)) out.push({ m: v.m, opts: withMine(v.m, MUSCLES[v.m]), slots: [] });
+  return out;
+}
+
+// plan
+function renderPlan() {
+$("#plan-days").innerHTML = DAYS.map((d,i) => `
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+    <div class="flex items-center justify-between">
+      <h2 class="font-semibold"><span class="mr-2 rounded bg-${d.color}-100 px-2 py-0.5 text-xs">${DAYLABEL[i]}</span>${d.name}</h2>
+      <span class="text-xs text-slate-500">${d.free ? "free choice" : d.groups.reduce((a,g)=>a+g.sets,0) + " sets"}</span>
+    </div>
+    <div class="mt-2 divide-y divide-slate-100">
+      ${d.free ? `<p class="py-2 text-sm text-slate-600">Any exercise you want. In the Workout log, pick a muscle, then an exercise, and choose how many sets. Use it for a lagging muscle or whatever you feel like doing.</p>` : muscleCards(d).map(c => `
+        <details class="py-2">
+          <summary class="flex cursor-pointer items-center justify-between gap-2 text-sm"><b>${c.m}</b><span class="font-mono text-slate-700">${c.slots.reduce((a,s)=>a+s.g.sets,0)} sets</span></summary>
+          <p class="mt-2 text-xs text-slate-500">${c.slots.map(s => `${s.g.sets} × ${s.g.reps}${s.g.sub ? " · " + s.g.sub : ""}: ${s.g.def}`).join(" · ")}</p>
+          <ul class="mt-2 space-y-1.5 pl-1 text-sm">${c.opts.map(o => `<li>${esc(o.name)}${o.mine ? ' <span class="text-xs text-emerald-700">(added by you)</span>' : ""} <a href="${howToUrl(o.name)}" target="_blank" rel="noopener noreferrer" class="text-xs underline">How to ↗</a><div class="text-xs text-slate-500">${startText(o)}</div>${TARGETS[o.name] ? `<div class="text-xs text-slate-700">Starting target: ${targetText(TARGETS[o.name], TARGETS[o.name].sets)}${TARGETS[o.name].est ? ' <span class="text-amber-700">(estimate)</span>' : ""}</div>` : ""}</li>`).join("")}</ul>
+        </details>`).join("")}
+    </div>
+  </div>`).join("");
+}
+renderPlan();
+
+const weekly = {};
+DAYS.forEach(d => d.groups.forEach(g => { weekly[g.m] = (weekly[g.m] || 0) + g.sets; }));
+$("#plan-volume").innerHTML = `
+  <h2 class="font-semibold">Weekly sets per muscle</h2>
+  <p class="text-xs text-slate-500">Target: 6–10 hard sets per muscle per week. Target day sets are not counted here.</p>
+  <div class="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">${Object.entries(weekly).map(([m, n]) => `<div class="flex justify-between rounded bg-slate-50 px-3 py-2"><span>${m}</span><b class="${n >= 6 && n <= 10 ? "text-emerald-700" : "text-red-700"}">${n}</b></div>`).join("")}</div>`;
+
+// log
+$("#log-date").value = today();
+$("#bw-date").value = today();
+const dow = new Date().getDay(); // Sun0
+$("#log-day").value = ({1:0,2:1,3:2,5:3,6:4})[dow] ?? 0;
+
+// the most recent earlier session of an exercise, by name: { date, sets }
+function lastSession(exName, beforeDate) {
+  const dates = Object.keys(store.logs).filter(d => d < beforeDate).sort().reverse();
+  for (const d of dates) for (const day of Object.values(store.logs[d])) for (const en of Object.values(day)) {
+    if (en?.ex !== exName) continue;
+    if ((en.sets || []).some(s => s && (s.w || s.r))) return { date: d, sets: en.sets };
+  }
+  return null;
+}
+function lastTime(exName, beforeDate) {
+  const l = lastSession(exName, beforeDate);
+  return l ? l.sets.filter(s => s && (s.w || s.r)).map(s => `${s.w||"?"}×${s.r||"?"}`).join(", ") : null;
+}
+const slug = m => m.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+// the planned exercises for a muscle, plus any exercises added for it on this date
+function slotsFor(c, date, day) {
+  const extras = Object.entries(store.logs[date]?.[day] || {})
+    .filter(([k, v]) => k.startsWith("x-") && v?.m === c.m)
+    .map(([k, v]) => ({ key: k, extra: true, g: { m: c.m, sets: v.count ?? 3, reps: "", def: c.opts[0].name } }));
+  return [...c.slots, ...extras];
+}
+let editingTarget = null;   // slot key whose target form is open
+let justAdded = null;      // slot that just saved a new exercise, to show a one-time confirmation
+function slotHtml(c, s, i, date, day) {
+  const g = s.g, cur = store.logs[date]?.[day]?.[s.key] || {};
+  const chosen = cur.ex ?? g.def;
+  const opt = c.opts.find(o => o.name === chosen);
+  const prev = lastTime(chosen, date), last = lastSession(chosen, date);
+  const ov = store.myTargets[chosen];
+  const ovActive = !!ov && date >= ov.on && (!last || last.date < ov.on);     // a hand-set target applies until a session is logged on or after that date
+  const tg = targetsFor(chosen, g.sets, last?.sets, ovActive);                // your target, last time's progression, or the starting target
+  const inputs = Array.from({length:g.sets}, (_,si) => `
+    <div class="flex items-center gap-1">
+      <span class="w-8 text-xs text-slate-400">Set ${si+1}</span>
+      <input data-gi="${s.key}" data-s="${si}" data-f="w" type="number" inputmode="decimal" placeholder="${tg ? (tg.sets[si][0] || "bw") : (opt?.start ?? "lb")}" value="${cur.sets?.[si]?.w ?? ""}" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+      <span class="text-slate-400">×</span>
+      <input data-gi="${s.key}" data-s="${si}" data-f="r" type="number" inputmode="numeric" placeholder="${tg ? tg.sets[si][1] : "reps"}" value="${cur.sets?.[si]?.r ?? ""}" class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+    </div>`).join("");
+  return `<div data-slot data-nsets="${g.sets}" class="${i === 0 ? "mt-2" : "mt-3 border-t border-slate-100 pt-3"}">
+    <div class="flex items-center justify-between text-xs text-slate-500">
+      <span>${s.extra ? "Added exercise" : `${g.sets} × ${g.reps}${g.sub ? " · " + g.sub : ""}`}</span>
+      ${s.extra ? `<span class="flex items-center gap-2"><span>${g.sets} sets</span><button data-setcount="${s.key}" data-d="-1" aria-label="Fewer sets" class="h-6 w-6 rounded border border-slate-300 leading-none">−</button><button data-setcount="${s.key}" data-d="1" aria-label="More sets" class="h-6 w-6 rounded border border-slate-300 leading-none">+</button><button data-remove="${s.key}" class="underline">Remove</button></span>` : ""}
+    </div>
+    <select data-sel="${s.key}" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm">
+      ${c.opts.filter(o => !o.mine).map(o => `<option ${o.name === chosen ? "selected" : ""}>${esc(o.name)}</option>`).join("")}
+      ${c.opts.some(o => o.mine) ? `<optgroup label="My exercises">${c.opts.filter(o => o.mine).map(o => `<option ${o.name === chosen ? "selected" : ""}>${esc(o.name)}</option>`).join("")}</optgroup>` : ""}
+      <option value="__other" ${opt ? "" : "selected"}>Other… (add a new one)</option>
+    </select>
+    ${opt ? "" : `<div class="mt-2 flex gap-2"><input data-other="${s.key}" type="text" placeholder="New exercise name" value="${esc(chosen)}" class="min-w-0 flex-1 rounded border border-slate-300 px-2 py-1 text-sm"><button data-add-ex="${s.key}" data-m="${esc(c.m)}" class="shrink-0 rounded bg-slate-900 px-3 py-1 text-xs font-medium text-white">Add to list</button></div>
+    <p class="mt-1 text-xs text-slate-500">Saved to your ${esc(c.m.toLowerCase())} list so you can pick it any time.</p>`}
+    ${justAdded === s.key ? `<p class="mt-1 text-xs text-emerald-700" role="status">Saved to your ${esc(c.m.toLowerCase())} list.</p>` : ""}
+    <div class="mt-1 flex items-start justify-between gap-3 text-xs text-slate-500"><span class="min-w-0">${prev ? "Last time: " + prev : (tg ? "First time with this exercise" : (opt ? startText(opt) : FIND))}</span>${chosen ? `<a href="${howToUrl(chosen)}" target="_blank" rel="noopener noreferrer" class="shrink-0 underline">How to ↗</a>` : ""}</div>
+    ${tg ? `<p class="mt-1 text-xs text-slate-700"><b>${tg.mine ? "Your target" : tg.complete ? "Target (from " + esc(last.date) + ")" : "Starting target"}:</b> ${targetText(tg.t, tg.sets)}${tg.t.note ? ` <span class="text-slate-500">(${esc(tg.t.note)})</span>` : ""}${tg.t.est && !tg.complete && !tg.mine ? ' <span class="text-amber-700">estimate</span>' : ""} <button data-edit-target="${s.key}" class="underline">Change</button></p>${editingTarget === s.key ? targetForm(chosen, tg, ov) : ""}${tg.t.warm ? `<p class="mt-1 text-xs text-slate-500">Warm-up, not counted: ${esc(tg.t.warm)}</p>` : ""}` : ""}
+    <p data-next class="mt-1 text-xs text-emerald-700">${esc(nextLineText(chosen, g.sets, cur.sets))}</p>
+    ${opt?.mine ? `<button data-del-ex="${esc(chosen)}" data-m="${esc(c.m)}" class="mt-1 text-xs text-red-700 underline">Remove from my list</button>` : ""}
+    <div class="mt-2 grid gap-2 sm:grid-cols-3">${inputs}</div>
+  </div>`;
+}
+let lastMuscle = "Chest";
+function renderLog() {
+  const date = $("#log-date").value, day = +$("#log-day").value;
+  const free = DAYS[day].free ? `<div data-free class="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+      <b class="text-sm">Target day: free choice</b>
+      <p class="mt-1 text-xs text-slate-500">Pick any muscle, then choose an exercise and how many sets. Add as many as you like.</p>
+      <div class="mt-2 flex gap-2"><select id="tg-muscle" class="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1.5 text-sm">${Object.keys(MUSCLES).map(m => `<option${m === lastMuscle ? " selected" : ""}>${esc(m)}</option>`).join("")}</select><button data-add-muscle class="shrink-0 rounded bg-slate-900 px-3 py-1.5 text-xs font-medium text-white">Add muscle</button></div>
+    </div>` : "";
+  $("#log-rows").innerHTML = free + muscleCards(DAYS[day], date, day).map(c => {
+    const slots = slotsFor(c, date, day);
+    return `<div data-card class="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+      <div class="flex items-baseline justify-between"><b class="text-sm">${c.m}</b><span class="text-xs text-slate-500">${slots.reduce((a,s)=>a+s.g.sets,0)} sets</span></div>
+      ${slots.map((s,i) => slotHtml(c, s, i, date, day)).join("")}
+      <button data-add="${c.m}" class="mt-3 text-xs underline">+ Add another exercise</button>
+    </div>`;
+  }).join("");
+  justAdded = null;
+}
+$("#log-date").addEventListener("change", renderLog);
+$("#log-day").addEventListener("change", renderLog);
+const entry = (date, day, key) => (((store.logs[date] ||= {})[day] ||= {})[key] ||= {});
+$("#log-rows").addEventListener("change", e => {
+  const t = e.target;
+  if (t.id === "tg-muscle") { lastMuscle = t.value; return; }
+  if (t.dataset.sel === undefined) return;
+  editingTarget = null;
+  entry($("#log-date").value, +$("#log-day").value, t.dataset.sel).ex = t.value === "__other" ? "" : t.value;
+  save(); renderLog();
+});
+function addExercise(btn) {
+  const date = $("#log-date").value, day = +$("#log-day").value, m = btn.dataset.m;
+  const input = btn.closest("[data-slot]").querySelector("[data-other]"), name = input.value.trim();
+  if (!name) { input.focus(); return; }
+  const c = muscleCards(DAYS[day], date, day).find(x => x.m === m);
+  const known = c.opts.find(o => o.name.toLowerCase() === name.toLowerCase());   // already in the list: just select it
+  if (!known) { (store.myExercises[m] ||= []).push(name); justAdded = btn.dataset.addEx; }
+  entry(date, day, btn.dataset.addEx).ex = known ? known.name : name;
+  save(); renderLog(); renderPlan();
+}
+function removeExercise(btn) {
+  if (!btn.dataset.armed) {                          // two taps, since the page cannot show confirm dialogs
+    btn.dataset.armed = "1"; btn.textContent = "Tap again to remove";
+    setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = "Remove from my list"; } }, 3000);
+    return;
+  }
+  const m = btn.dataset.m;
+  store.myExercises[m] = (store.myExercises[m] || []).filter(n => n !== btn.dataset.delEx);
+  if (!store.myExercises[m].length) delete store.myExercises[m];
+  save(); renderLog(); renderPlan();                // sets already logged keep the exercise name
+}
+$("#log-rows").addEventListener("keydown", e => {
+  if (e.key === "Enter" && (e.target.dataset.tw !== undefined || e.target.dataset.tr !== undefined)) { e.preventDefault(); e.target.closest("[data-target-form]").querySelector("[data-save-target]").click(); return; }
+  if (e.key === "Enter" && e.target.dataset.other !== undefined) { e.preventDefault(); e.target.closest("[data-slot]").querySelector("[data-add-ex]").click(); }
+});
+$("#log-rows").addEventListener("click", e => {
+  const t = e.target.closest("button");
+  if (!t) return;
+  if (t.dataset.editTarget !== undefined) {
+    editingTarget = t.dataset.editTarget; renderLog();
+    const f = $("#log-rows [data-tw], #log-rows [data-tr]"); if (f) f.focus();
+    return;
+  }
+  if (t.dataset.cancelTarget !== undefined) { editingTarget = null; renderLog(); return; }
+  if (t.dataset.resetTarget !== undefined) { delete store.myTargets[t.dataset.ex]; editingTarget = null; save(); renderLog(); return; }
+  if (t.dataset.saveTarget !== undefined) {
+    const form = t.closest("[data-target-form]"), tw = form.querySelector("[data-tw]"), tr = form.querySelector("[data-tr]");
+    const w = tw ? parseFloat(tw.value) : 0, r = parseInt(tr.value, 10);
+    if (tw && !(w > 0)) { tw.focus(); return; }
+    if (!(r >= 1)) { tr.focus(); return; }
+    store.myTargets[t.dataset.ex] = { w: tw ? w : 0, r, on: $("#log-date").value };
+    editingTarget = null; save(); renderLog(); return;
+  }
+  if (t.dataset.addEx !== undefined) { addExercise(t); return; }
+  if (t.dataset.addMuscle !== undefined) {           // free day: start a card for any muscle
+    const m = lastMuscle = $("#tg-muscle").value, d0 = ((store.logs[$("#log-date").value] ||= {})[+$("#log-day").value] ||= {});
+    let n = 1;
+    while (d0[`x-${slug(m)}-${n}`]) n++;
+    d0[`x-${slug(m)}-${n}`] = { m, ex: MUSCLES[m][0].name, count: 3 };
+    save(); renderLog(); return;
+  }
+  if (t.dataset.setcount !== undefined) {            // free-day exercises: 1 to 10 sets
+    const en = ((store.logs[$("#log-date").value] ||= {})[+$("#log-day").value] ||= {})[t.dataset.setcount];
+    if (en) en.count = Math.min(10, Math.max(1, (en.count ?? 3) + +t.dataset.d));
+    save(); renderLog(); return;
+  }
+  if (t.dataset.delEx !== undefined) { removeExercise(t); return; }
+  const date = $("#log-date").value, day = +$("#log-day").value;
+  const today_ = ((store.logs[date] ||= {})[day] ||= {});
+  if (t.dataset.add !== undefined) {
+    const m = t.dataset.add, c = muscleCards(DAYS[day], date, day).find(x => x.m === m);
+    const taken = slotsFor(c, date, day).map(s => today_[s.key]?.ex ?? s.g.def);
+    const ex = (c.opts.find(o => !taken.includes(o.name)) || c.opts[0]).name;
+    let n = 1;
+    while (today_[`x-${slug(m)}-${n}`]) n++;
+    today_[`x-${slug(m)}-${n}`] = { m, ex, count: 3 };
+  } else if (t.dataset.remove !== undefined) {
+    delete today_[t.dataset.remove];
+  } else return;
+  save(); renderLog();
+});
+$("#log-rows").addEventListener("input", e => {
+  const t = e.target, date = $("#log-date").value, day = +$("#log-day").value;
+  if (t.dataset.other !== undefined) return;         // a new name is saved by "Add to list", or with the first set logged
+  if (!t.dataset.f) return;
+  const en = entry(date, day, t.dataset.gi);
+  const slot = t.closest("[data-slot]"), sel = slot.querySelector("select");
+  if (!en.ex) en.ex = sel.value === "__other" ? (slot.querySelector("[data-other]")?.value.trim() ?? "") : sel.value;
+  const sets = (en.sets ||= []);
+  (sets[t.dataset.s] ||= {})[t.dataset.f] = t.value;
+  save();
+  const nx = slot.querySelector("[data-next]");               // update the "next time" line without redrawing (the field keeps focus)
+  if (nx) nx.textContent = nextLineText(en.ex, +slot.dataset.nsets, sets);
+});
+renderLog();
+
+// body weight
+const GOAL = 180, START = 156;
+$("#bw-add").addEventListener("click", () => {
+  const v = parseFloat($("#bw-val").value), d = $("#bw-date").value;
+  if (!v || !d) return;
+  store.bw = store.bw.filter(x => x.d !== d); store.bw.push({d, w:v});
+  store.bw.sort((a,b) => a.d.localeCompare(b.d)); save(); $("#bw-val").value = ""; renderBody();
+});
+function renderBody() {
+  const list = store.bw, last = list.at(-1);
+  $("#bw-now").textContent = last ? `${last.w} lb (${(last.w - START >= 0 ? "+" : "")}${(last.w-START).toFixed(1)} from start)` : "No entries yet";
+  $("#bw-bar").style.width = last ? Math.max(0, Math.min(100, (last.w-START)/(GOAL-START)*100)) + "%" : "0%";
+  $("#bw-list").innerHTML = list.slice().reverse().map(x => `<li class="flex justify-between py-1"><span>${x.d}</span><span>${x.w} lb <button data-del="${x.d}" class="ml-2 text-xs text-red-600">delete</button></span></li>`).join("");
+  // weekly buckets from first entry
+  const weeks = [];
+  if (list.length) {
+    const t0 = new Date(list[0].d + "T00:00:00");
+    list.forEach(x => { const wk = Math.floor((new Date(x.d + "T00:00:00") - t0) / 864e5 / 7); (weeks[wk] ||= []).push(x.w); });
+  }
+  const avgs = weeks.map(w => w ? w.reduce((a,b)=>a+b,0)/w.length : null);
+  $("#bw-weeks").innerHTML = avgs.map((a,i) => {
+    if (a == null) return "";
+    const prev = avgs.slice(0,i).filter(x => x != null).at(-1);
+    const ch = prev == null ? "—" : `${a-prev>=0?"+":""}${(a-prev).toFixed(1)}`;
+    return `<tr class="border-t border-slate-100"><td class="px-3 py-2">${i+1}</td><td class="px-3 py-2">${a.toFixed(1)}</td><td class="px-3 py-2">${ch}</td><td class="px-3 py-2">${weeks[i].length}</td></tr>`;
+  }).join("");
+  const adv = $("#bw-advice"), real = avgs.filter(x => x != null);
+  if (real.length >= 3) {
+    const actual = (real.at(-1) - real.at(-3)) / 2;
+    let msg;
+    if (actual < gainRate - 0.25) msg = `Average gain over the last two weeks: ${actual.toFixed(2)} lb/week, below your ${gainRate} lb/week goal. Consider adding about 200 kcal per day.`;
+    else if (actual > gainRate + 0.5) msg = `Average gain over the last two weeks: ${actual.toFixed(2)} lb/week, above your ${gainRate} lb/week goal. Consider cutting about 100 kcal per day, especially if you're gaining fat.`;
+    else msg = `Average gain over the last two weeks: ${actual.toFixed(2)} lb/week. On pace for your ${gainRate} lb/week goal. Keep calories the same.`;
+    adv.textContent = msg + ""; adv.classList.remove("hidden");
+  } else adv.classList.add("hidden");
+  if (targetsReady) applyRate();
+}
+$("#bw-list").addEventListener("click", e => { const d = e.target.dataset.del; if (d) { store.bw = store.bw.filter(x => x.d !== d); save(); renderBody(); } });
+renderBody();
+
+// ---- targets: gain-rate picker ----
+function applyRate() {
+  gainRate = store.prefs.rate ?? 1;
+  const lb = store.bw.length ? store.bw.at(-1).w : 156, kg = lb / 2.2046;
+  const kcal = Math.round((MAINT + 500 * gainRate) / 50) * 50;
+  const perKg = PROTEIN_PER_KG[gainRate], protein = Math.round(kg * perKg / 5) * 5;
+  const weeks = Math.max(0, Math.ceil((180 - lb) / gainRate));
+  TARGET.kcal = kcal; TARGET.protein = protein;
+  $("#rate-select").value = String(gainRate);
+  $("#t-kcal").textContent = kcal.toLocaleString("en-US");
+  $("#t-protein").textContent = "~" + protein + " g";
+  $("#t-rate").textContent = gainRate + " lb/wk";
+  $("#rate-detail").textContent = `About ${MAINT.toLocaleString("en-US")} kcal maintains your weight, plus ${500 * gainRate} kcal a day to gain ${gainRate} lb a week. Protein is ${perKg} g/kg of your ${Math.round(lb)} lb. At this pace, ${Math.round(lb)} → 180 lb takes about ${weeks} weeks (${(weeks / 4.345).toFixed(1)} months).`;
+  const warn = $("#rate-warn");
+  warn.classList.toggle("hidden", gainRate < 1.5);
+  warn.textContent = "Gaining more than about 1 lb a week adds mostly fat for most people. Bony to Beastly describes 1+ lb a week as an option for thin beginners on a strong program, and says to slow down if fat gain shows up.";
+  const fatLo = Math.round(kcal * 0.30 / 9), fatHi = Math.round(kcal * 0.35 / 9);
+  const carbHi = Math.round((kcal - 4 * protein - 9 * fatLo) / 4 / 10) * 10, carbLo = Math.round((kcal - 4 * protein - 9 * fatHi) / 4 / 10) * 10;
+  $("#carb-budget").innerHTML = `My arithmetic: ${kcal.toLocaleString("en-US")} kcal − ~${protein} g protein (${4 * protein} kcal) − ${fatLo}–${fatHi} g fat (30–35% of calories) leaves roughly <b>${carbLo}–${carbHi} g of carbs a day</b>, or about ${Math.round(carbLo / 25) * 5}–${Math.round(carbHi / 25) * 5} g across five eating times. That is probably well above what you eat now. Ramp up over 2–3 weeks as you go (my suggestion, not from a source).`;
+  if (targetsReady) renderMeals();
+}
+$("#rate-select").addEventListener("change", e => {
+  store.prefs.rate = +e.target.value;
+  save(); applyRate();
+});
+
+// ---- meal builder and meal log ----
+const FOODS = {"oats":{"name":"Oatmeal, cooked","portion":"½ cup","g":117,"c":14.0,"p":3.0,"k":83,"f":2.0},"rice":{"name":"White rice, cooked","portion":"⅓ cup","g":53,"c":14.8,"p":1.4,"k":68,"f":0.2},"brice":{"name":"Brown rice, cooked","portion":"⅓ cup","g":67,"c":17.2,"p":1.8,"k":83,"f":1.1},"pasta":{"name":"Pasta, cooked","portion":"⅓ cup","g":41,"c":12.8,"p":2.4,"k":65,"f":0.7},"quinoa":{"name":"Quinoa, cooked","portion":"⅓ cup","g":62,"c":13.1,"p":2.7,"k":74,"f":1.7},"couscous":{"name":"Couscous, cooked","portion":"⅓ cup","g":52,"c":12.2,"p":2.0,"k":59,"f":0.7},"barley":{"name":"Barley, pearled, cooked","portion":"⅓ cup","g":52,"c":14.8,"p":1.2,"k":64,"f":2.0},"bulgur":{"name":"Bulgur, cooked","portion":"½ cup","g":91,"c":16.9,"p":2.8,"k":76,"f":4.1},"wildrice":{"name":"Wild rice, cooked","portion":"½ cup","g":82,"c":17.5,"p":3.3,"k":83,"f":1.5},"cereal":{"name":"Cheerios (unsweetened cereal)","portion":"¾ cup","g":21,"c":15.4,"p":2.6,"k":78,"f":2.1},"granola":{"name":"Granola","portion":"¼ cup","g":31,"c":16.4,"p":4.2,"k":149,"f":2.7},"wbread":{"name":"White bread","portion":"1 slice","g":29,"c":14.3,"p":2.6,"k":77,"f":0.8},"wwbread":{"name":"Whole-wheat bread","portion":"1 slice","g":32,"c":13.7,"p":4.0,"k":81,"f":1.9},"ftort":{"name":"Flour tortilla","portion":"1 small (6 in)","g":30,"c":14.8,"p":2.5,"k":92,"f":1.1},"ctort":{"name":"Corn tortilla","portion":"1 small (6 in)","g":26,"c":12.1,"p":1.5,"k":58,"f":1.4},"pita":{"name":"Pita, white","portion":"½ pita (6½ in)","g":30,"c":16.7,"p":2.7,"k":83,"f":0.7},"emuffin":{"name":"English muffin","portion":"½ muffin","g":29,"c":13.1,"p":2.2,"k":67,"f":0.8},"bagel":{"name":"Bagel, plain","portion":"¼ large (1 oz)","g":28,"c":14.8,"p":3.0,"k":75,"f":0.5},"pancake":{"name":"Pancake","portion":"1 (4 in)","g":38,"c":10.8,"p":2.4,"k":86,"f":0.0},"waffle":{"name":"Waffle, frozen","portion":"1 (4 in square)","g":35,"c":15.0,"p":2.3,"k":100,"f":0.8},"sweetpot":{"name":"Sweet potato, baked","portion":"½ cup","g":100,"c":20.7,"p":2.0,"k":90,"f":3.3},"potato":{"name":"Baked potato, russet","portion":"¼ large (3 oz)","g":85,"c":18.2,"p":2.2,"k":81,"f":2.0},"corn":{"name":"Corn, boiled","portion":"½ cup","g":75,"c":15.6,"p":2.5,"k":72,"f":1.8},"blackbeans":{"name":"Black beans, cooked","portion":"½ cup","g":86,"c":20.4,"p":7.6,"k":114,"f":7.5},"chickpeas":{"name":"Chickpeas, cooked","portion":"½ cup","g":82,"c":22.5,"p":7.3,"k":134,"f":6.2},"lentils":{"name":"Lentils, cooked","portion":"½ cup","g":99,"c":19.9,"p":8.9,"k":115,"f":7.8},"bakedbeans":{"name":"Baked beans, canned","portion":"⅓ cup","g":85,"c":17.9,"p":4.0,"k":80,"f":3.5},"apple":{"name":"Apple, with skin","portion":"1 small (4 oz)","g":113,"c":15.6,"p":0.3,"k":59,"f":2.7},"banana":{"name":"Banana","portion":"½ medium","g":59,"c":13.5,"p":0.6,"k":53,"f":1.5},"orange":{"name":"Orange","portion":"1 medium (2⅝ in)","g":131,"c":15.4,"p":1.2,"k":62,"f":3.1},"oj":{"name":"Orange juice","portion":"½ cup","g":124,"c":12.9,"p":0.9,"k":56,"f":0.2},"aj":{"name":"Apple juice","portion":"½ cup","g":124,"c":14.0,"p":0.1,"k":57,"f":0.2},"wmilk":{"name":"Milk, whole","portion":"1 cup","g":244,"c":11.7,"p":7.7,"k":149,"f":0.0},"smilk":{"name":"Milk, skim","portion":"1 cup","g":245,"c":11.9,"p":8.3,"k":86,"f":0.0},"yog":{"name":"Plain yogurt, low-fat","portion":"¾ cup","g":184,"c":12.9,"p":9.6,"k":116,"f":0.0},"gyog":{"name":"Greek yogurt, plain nonfat","portion":"1 container (6 oz)","g":170,"c":6.1,"p":17.3,"k":100,"f":0.0},"cottage":{"name":"Cottage cheese, 2%","portion":"½ cup","g":113,"c":5.4,"p":11.8,"k":92,"f":0.0},"egg":{"name":"Egg, large","portion":"1 egg","g":50,"c":0.4,"p":6.3,"k":72,"f":0.0},"chicken":{"name":"Chicken breast, roasted","portion":"4 oz cooked","g":113,"c":0.0,"p":35.1,"k":186,"f":0.0},"turkey":{"name":"Turkey breast, roasted","portion":"4 oz cooked","g":113,"c":0.0,"p":34.0,"k":166,"f":0.0},"beef":{"name":"Ground beef, 90% lean, broiled","portion":"4 oz cooked","g":113,"c":0.0,"p":29.5,"k":245,"f":0.0},"salmon":{"name":"Salmon, farmed, cooked","portion":"4 oz cooked","g":113,"c":0.0,"p":25.0,"k":233,"f":0.0},"tuna":{"name":"Tuna, light, canned in water","portion":"1 can, drained","g":165,"c":0.0,"p":32.1,"k":142,"f":0.0},"tofu":{"name":"Tofu, firm","portion":"½ cup","g":126,"c":3.5,"p":21.8,"k":181,"f":2.9},"pb":{"name":"Peanut butter","portion":"2 tbsp","g":32,"c":7.1,"p":7.1,"k":191,"f":1.6},"cheddar":{"name":"Cheddar cheese","portion":"1 oz","g":28,"c":0.6,"p":6.8,"k":115,"f":0.0},"premier":{"name":"Premier Protein shake, vanilla","portion":"1 shake (11 fl oz)","g":325,"c":3.0,"p":30.0,"k":160,"f":0.0,"n":"from your label photo","est":false},"cheeseheads":{"name":"Frigo Cheese Heads string cheese","portion":"1 piece","g":28,"c":1.0,"p":6.0,"k":80,"f":0.0,"n":"from your label photo","est":false},"uncrust":{"name":"Smucker's Uncrustables, PB & grape jelly","portion":"1 sandwich (2 oz)","g":58,"c":28.0,"p":6.0,"k":210,"f":2.0,"n":"label cut off in photo; from Smucker's and retailer listings","est":false},"lemoncake":{"name":"Marketside iced lemon loaf cake","portion":"1 slice (50 g)","g":50,"c":26.0,"p":2.0,"k":200,"f":0.0,"n":"from your label","est":false},"chobani":{"name":"Chobani Greek yogurt cup","portion":"1 container (150 g)","g":150,"c":16.0,"p":12.0,"k":110,"f":0.0,"n":"from your label","est":false}};
+let draft = [];
+try { draft = JSON.parse(localStorage.getItem("bulk-plan-demo-draft")) || []; } catch (e) { draft = []; }
+const saveDraft = () => { try { localStorage.setItem("bulk-plan-demo-draft", JSON.stringify(draft)); } catch (e) {} };
+const r0 = n => Math.round(n).toLocaleString("en-US");
+const fmtQty = q => String(+q.toFixed(2));
+// foods you added yourself live in store.myFoods and are keyed "my:<id>"
+const myFoodObj = k => {
+  const m = store.myFoods.find(f => "my:" + f.id === k);
+  return m ? { name: m.name, portion: "1 item", g: 0, c: m.c, p: m.p, k: m.kc, f: 0, n: "added by you", mine: true } : undefined;
+};
+const foodOf = k => k.startsWith("my:") ? myFoodObj(k) : FOODS[k];
+const foodCats = () => store.myFoods.length ? [{ cat: "My foods", keys: store.myFoods.map(f => "my:" + f.id) }, ...FOOD_CATS] : FOOD_CATS;
+const itemFood = it => it.k === "custom" ? { name: it.name, portion: "1 item", c: it.c, p: it.p, k: it.kc } : FOODS[it.k];
+const sumItems = items => items.reduce((a, it) => {
+  const f = itemFood(it);
+  if (f && it.q > 0) { a.c += f.c * it.q; a.p += f.p * it.q; a.k += f.k * it.q; }
+  return a;
+}, { c: 0, p: 0, k: 0 });
+const tile = (label, value, unit) => `<div class="rounded bg-white px-2 py-2 ring-1 ring-slate-200"><div class="text-xs text-slate-500">${label}</div><b class="tabular-nums">${value}</b> <span class="text-xs text-slate-500">${unit}</span></div>`;
+
+function renderTotals() {
+  const t = sumItems(draft);
+  $("#mb-totals").innerHTML = tile("Carbs", r0(t.c), "g") + tile("Calories", r0(t.k), "kcal") + tile("Protein", r0(t.p), "g");
+  updateBar();
+}
+function renderBuilder() {
+  $("#mb-items").innerHTML = draft.length ? draft.map((it, i) => {
+    const f = itemFood(it);
+    if (!f) return "";
+    return `<div class="py-3">
+      <div class="text-sm">${esc(f.name)}</div>
+      <div class="text-xs text-slate-500">${esc(f.portion)} each · ${r0(f.c * it.q)} g carbs · ${r0(f.k * it.q)} kcal · ${r0(f.p * it.q)} g protein</div>
+      <div class="mt-2 flex items-center gap-2">
+        <button data-q="${i}" data-d="-0.5" aria-label="Less" class="h-9 w-9 shrink-0 rounded border border-slate-300 bg-white">−</button>
+        <input data-qty="${i}" type="number" inputmode="decimal" step="0.5" min="0" value="${fmtQty(it.q)}" aria-label="Portions" class="w-16 min-w-0 rounded border border-slate-300 bg-white px-1 py-1 text-center">
+        <button data-q="${i}" data-d="0.5" aria-label="More" class="h-9 w-9 shrink-0 rounded border border-slate-300 bg-white">+</button>
+        <span class="text-xs text-slate-500">portions</span>
+        <button data-rm="${i}" class="ml-auto shrink-0 px-1 text-xs text-red-700 underline">Remove</button>
+      </div>
+    </div>`;
+  }).join("") : '<p class="py-2 text-sm text-slate-500">Nothing added yet.</p>';
+  renderTotals();
+}
+function updateBar() {
+  const t = sumItems(draft), show = draft.length && !$("#tab-food").classList.contains("hidden");
+  $("#mb-bar").classList.toggle("hidden", !show);
+  $("#mb-bar-count").textContent = `Meal in progress · ${draft.length} item${draft.length === 1 ? "" : "s"}`;
+  $("#mb-bar-text").textContent = `${r0(t.c)} g carbs · ${r0(t.k)} kcal · ${r0(t.p)} g protein`;
+}
+function addToDraft(key) {
+  const f = key.startsWith("my:") ? myFoodObj(key) : null;
+  if (f) {   // saved foods go into the meal as a copy, so old meals keep their numbers if you later change the saved food
+    const have = draft.find(it => it.k === "custom" && it.name === f.name && it.c === f.c && it.p === f.p && it.kc === f.k);
+    if (have) have.q += 1; else draft.push({ k: "custom", name: f.name, c: f.c, p: f.p, kc: f.k, q: 1 });
+  } else {
+    const have = draft.find(it => it.k === key);
+    if (have) have.q += 1; else draft.push({ k: key, q: 1 });
+  }
+  saveDraft(); renderBuilder();
+}
+$("#mb-add").addEventListener("click", () => addToDraft($("#mb-pick").value));
+$("#mb-items").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.rm !== undefined) draft.splice(+b.dataset.rm, 1);
+  else if (b.dataset.q !== undefined) {
+    const it = draft[+b.dataset.q];
+    it.q = Math.round((it.q + +b.dataset.d) * 100) / 100;
+    if (it.q <= 0) draft.splice(+b.dataset.q, 1);
+  } else return;
+  saveDraft(); renderBuilder();
+});
+$("#mb-items").addEventListener("input", e => {
+  if (e.target.dataset.qty === undefined) return;
+  draft[+e.target.dataset.qty].q = parseFloat(e.target.value) || 0;
+  saveDraft(); renderTotals();                      // totals only, so the field keeps focus
+});
+$("#mb-items").addEventListener("change", e => {
+  if (e.target.dataset.qty === undefined) return;
+  draft = draft.filter(it => it.q > 0);
+  saveDraft(); renderBuilder();
+});
+$("#cu-add").addEventListener("click", () => {
+  const name = $("#cu-name").value.trim(), c = parseFloat($("#cu-c").value) || 0, p = parseFloat($("#cu-p").value) || 0, kc = parseFloat($("#cu-k").value) || 0;
+  if (!name) return;
+  let mine = store.myFoods.find(f => f.name.toLowerCase() === name.toLowerCase());
+  if (mine) Object.assign(mine, { name, c, p, kc });                 // same name: update its numbers
+  else store.myFoods.push(mine = { id: newId(), name, c, p, kc });
+  ["#cu-name", "#cu-c", "#cu-p", "#cu-k"].forEach(s => { $(s).value = ""; });
+  save();
+  refreshFoodControls(); renderFoods();
+  addToDraft("my:" + mine.id);
+  $("#cu-msg").textContent = `Added to this meal and saved to My foods, so you can add ${name} again from the food list or the dropdown.`;
+});
+$("#mb-clear").addEventListener("click", () => { draft = []; saveDraft(); renderBuilder(); });
+const toBuilder = () => $("#meal-builder").scrollIntoView({ behavior: "smooth", block: "start" });
+$("#mb-bar-go").addEventListener("click", toBuilder);
+$("#ml-build").addEventListener("click", toBuilder);
+$("#mb-save").addEventListener("click", () => {
+  const items = draft.filter(it => it.q > 0 && itemFood(it));
+  if (!items.length) return;
+  const date = $("#meal-date").value, t = sumItems(items);
+  (store.meals[date] ||= []).push({ id: newId(), type: $("#meal-type").value, items: JSON.parse(JSON.stringify(items)), t: { c: +t.c.toFixed(1), p: +t.p.toFixed(1), k: Math.round(t.k) } });
+  draft = []; saveDraft(); save(); renderBuilder(); renderMeals();
+});
+
+const bar = (label, value, target, unit) => `<div><div class="flex justify-between text-xs"><span>${label}</span><span class="tabular-nums">${r0(value)}${target ? " / " + r0(target) : ""} ${unit}</span></div>${target ? `<div class="mt-1 h-2 overflow-hidden rounded-full bg-slate-200"><div class="h-full bg-emerald-500" style="width:${Math.min(100, value / target * 100)}%"></div></div>` : ""}</div>`;
+function renderMeals() {
+  const date = $("#meal-date").value, list = store.meals[date] || [];
+  $("#ml-date-label").textContent = `Meals saved for ${date}. Targets come from your plan.`;
+  $("#mb-date-note").textContent = `Saves to ${date}, the date at the top of this page.`;
+  const day = list.reduce((a, m) => ({ c: a.c + m.t.c, p: a.p + m.t.p, k: a.k + m.t.k }), { c: 0, p: 0, k: 0 });
+  $("#ml-day").innerHTML = bar("Calories", day.k, TARGET.kcal, "kcal") + bar("Protein", day.p, TARGET.protein, "g") + bar("Carbs", day.c, 0, "g");
+  $("#ml-list").innerHTML = list.length ? list.map(m => `
+    <div class="rounded-lg border border-slate-200 p-3">
+      <div class="flex items-baseline justify-between gap-2"><b class="text-sm">${esc(m.type)}</b><button data-del-meal="${esc(m.id)}" class="text-xs text-red-700 underline">Delete</button></div>
+      <div class="text-xs text-slate-500">${r0(m.t.c)} g carbs · ${r0(m.t.k)} kcal · ${r0(m.t.p)} g protein</div>
+      <ul class="mt-2 list-disc pl-5 text-sm text-slate-700">${m.items.map(it => { const f = itemFood(it); return f ? `<li>${fmtQty(it.q)} × ${esc(f.name)}${it.k === "custom" ? "" : " (" + esc(f.portion) + ")"}</li>` : ""; }).join("")}</ul>
+    </div>`).join("") : '<p class="text-sm text-slate-500">No meals saved for this date yet.</p>';
+}
+$("#ml-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-del-meal]");
+  if (!b) return;
+  if (!b.dataset.armed) {                           // two taps to delete, since the page cannot show confirm dialogs
+    b.dataset.armed = "1"; b.textContent = "Tap again to delete";
+    setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "Delete"; } }, 3000);
+    return;
+  }
+  const date = $("#meal-date").value;
+  store.meals[date] = (store.meals[date] || []).filter(m => m.id !== b.dataset.delMeal);
+  if (!store.meals[date].length) delete store.meals[date];
+  save(); renderMeals();
+});
+// ---- food table: sorted and filtered from FOODS ----
+const FOOD_CATS = [{"cat":"Grains and cereal","keys":["oats","rice","brice","pasta","quinoa","couscous","barley","bulgur","wildrice","cereal","granola"]},{"cat":"Bread and wraps","keys":["wbread","wwbread","ftort","ctort","pita","emuffin","bagel","pancake","waffle"]},{"cat":"Starchy vegetables and beans","keys":["sweetpot","potato","corn","blackbeans","chickpeas","lentils","bakedbeans"]},{"cat":"Fruit and juice","keys":["apple","banana","orange","oj","aj"]},{"cat":"Dairy","keys":["wmilk","smilk","yog","gyog","cottage"]},{"cat":"Protein foods","keys":["egg","chicken","turkey","beef","salmon","tuna","tofu","pb","cheddar"]},{"cat":"Packaged snacks","keys":["premier","cheeseheads","chobani","uncrust","lemoncake"]}];
+let foodSort = "default", foodCat = "all";
+const fmtG = x => x < 0.05 ? "0" : x < 0.5 ? "<1" : String(Math.round(x));
+const SORTS = { "c-asc": ["c", 1], "c-desc": ["c", -1], "p-desc": ["p", -1], "k-asc": ["k", 1] };
+function foodRow(k, cat) {
+  const d = foodOf(k), fiber = d.f >= 2.5 ? ` · ${Math.round(d.f)} g fiber` : "";
+  return `<div class="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-sm"><div class="w-full min-w-0 min-[380px]:w-auto min-[380px]:flex-1">${esc(d.name)}<div class="text-xs text-slate-500">${cat ? esc(cat) + " · " : ""}${esc(d.portion)}${d.g ? " · " + d.g + " g" : ""}${fiber}${d.n ? ` · <span class="${d.est ? "text-amber-700" : ""}">${esc(d.n)}</span>` : ""}${d.mine ? ` · <button data-del-myfood="${esc(k.slice(3))}" class="text-red-700 underline">Remove</button>` : ""}</div></div><div class="ml-auto flex shrink-0 items-center gap-2"><span class="w-12 text-right tabular-nums">${fmtG(d.c)}</span><span class="w-12 text-right tabular-nums">${fmtG(d.p)}</span><span class="w-12 text-right tabular-nums">${d.k}</span><button data-add-food="${k}" aria-label="Add ${esc(d.name)} to meal" class="h-8 w-8 shrink-0 rounded-full border border-slate-300 text-lg leading-none">+</button></div></div>`;
+}
+function foodHead(label) {
+  const col = (id, text) => `<span class="w-12 text-right ${foodSort.startsWith(id) ? "text-slate-900" : ""}">${text}</span>`;
+  return `<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-slate-200 pb-1 text-xs font-semibold text-slate-600"><span class="w-full min-[380px]:w-auto min-[380px]:flex-1">${label}</span><div class="ml-auto flex shrink-0 items-center gap-2">${col("c-", "Carbs")}${col("p-", "Protein")}${col("k-", "Cal")}<span class="w-8 shrink-0"></span></div></div>`;
+}
+function renderFoods() {
+  const cats = foodCats().filter(c => foodCat === "all" || c.cat === foodCat);
+  if (foodSort === "default") {
+    $("#food-table").innerHTML = cats.map(c => `<div class="mt-4">${foodHead(esc(c.cat))}<div class="divide-y divide-slate-100">${c.keys.map(k => foodRow(k)).join("")}</div></div>`).join("");
+    return;
+  }
+  const [f, dir] = SORTS[foodSort];
+  const list = cats.flatMap(c => c.keys.map(k => ({ k, cat: c.cat })))
+    .sort((a, b) => (foodOf(a.k)[f] - foodOf(b.k)[f]) * dir || foodOf(a.k).name.localeCompare(foodOf(b.k).name));
+  $("#food-table").innerHTML = `<div class="mt-4">${foodHead(list.length + " foods")}<div class="divide-y divide-slate-100">${list.map(x => foodRow(x.k, x.cat)).join("")}</div></div>`;
+}
+function refreshFoodControls() {      // rebuilds the dropdowns when the My foods list changes
+  const cats = foodCats();
+  if (foodCat !== "all" && !cats.some(c => c.cat === foodCat)) foodCat = "all";
+  $("#mb-pick").innerHTML = cats.map(c => `<optgroup label="${esc(c.cat)}">${c.keys.map(k => `<option value="${k}">${esc(foodOf(k).name)} (${esc(foodOf(k).portion)})</option>`).join("")}</optgroup>`).join("");
+  $("#food-cat").innerHTML = '<option value="all">All foods</option>' + cats.map(c => `<option>${esc(c.cat)}</option>`).join("");
+  $("#food-cat").value = foodCat;
+}
+refreshFoodControls();
+$("#food-cat").addEventListener("change", e => { foodCat = e.target.value; renderFoods(); });
+$("#food-sort").addEventListener("change", e => { foodSort = e.target.value; renderFoods(); });
+$("#food-table").addEventListener("click", e => {
+  const del = e.target.closest("[data-del-myfood]");
+  if (del) {
+    if (!del.dataset.armed) {                       // two taps to remove, since the page cannot show confirm dialogs
+      del.dataset.armed = "1"; del.textContent = "Tap again to remove";
+      setTimeout(() => { if (del.isConnected) { delete del.dataset.armed; del.textContent = "Remove"; } }, 3000);
+      return;
+    }
+    store.myFoods = store.myFoods.filter(f => f.id !== del.dataset.delMyfood);
+    save(); refreshFoodControls(); renderFoods();
+    return;
+  }
+  const b = e.target.closest("[data-add-food]");
+  if (b) addToDraft(b.dataset.addFood);
+});
+
+$("#meal-date").value = today();
+$("#meal-date").addEventListener("change", renderMeals);
+renderFoods();
+renderBuilder();
+renderMeals();
+targetsReady = true;
+applyRate();
+
+// ---- durable storage: the `db` capability, with this browser as the fallback ----
+document.addEventListener("click", e => {
+  if (!e.target.closest("#demo-reset")) return;
+  try { localStorage.removeItem(KEY); localStorage.removeItem("bulk-plan-demo-draft"); } catch (err) {}
+  location.reload();
+});
+const SYNC_TEXT = { local: "Demo: sample data, saved in this browser only.", saving: "Saving…", saved: "Saved to your account", error: "Couldn't reach your account storage. Still saved on this device." };
+function setSync(state, err) {
+  const el = $("#sync");
+  if (el) el.textContent = state === "error" && err?.code === "quota_exceeded" ? "Account storage is full. Still saved on this device." : SYNC_TEXT[state];
+}
+let DB = null, syncReady = false, syncTimer = 0, retryTimer = 0, renderPending = false;
+const synced = {};   // path -> stable JSON last known to be in the database
+const writing = { next: new Map(), busy: new Set() };
+const clean = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+const stable = v => JSON.stringify(v, (k, x) => x && typeof x === "object" && !Array.isArray(x)
+  ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a < b ? -1 : 1)) : x);
+
+// one document per workout session, per weigh-in and per day of meals, plus one for preferences, one for your saved foods, one for exercises you added and one for target weights you set
+function desiredDocs() {
+  const out = {};
+  for (const [date, days] of Object.entries(store.logs))
+    for (const [day, groups] of Object.entries(days))
+      if (Object.values(groups).some(g => g && ((g.ex ?? "") !== "" || (g.sets || []).some(s => s && (s.w || s.r)))))
+        out[`workouts/${date}_${day}`] = clean({ date, day: +day, groups });
+  for (const x of store.bw) out[`weights/${x.d}`] = { d: x.d, w: x.w };
+  if (store.prefs.rate != null) out["prefs/main"] = { rate: store.prefs.rate };
+  for (const [date, list] of Object.entries(store.meals)) if (list.length) out[`meals/${date}`] = clean({ date, meals: list });
+  if (store.myFoods.length) out["myfoods/list"] = clean({ foods: store.myFoods });
+  if (Object.keys(store.myExercises).length) out["myexercises/list"] = clean({ byMuscle: store.myExercises });
+  if (Object.keys(store.myTargets).length) out["mytargets/list"] = clean({ byExercise: store.myTargets });
+  return out;
+}
+function syncSoon() { clearTimeout(syncTimer); syncTimer = setTimeout(syncAll, 800); }
+function syncAll() {
+  if (!DB || !syncReady) return;
+  const want = desiredDocs();
+  for (const [p, d] of Object.entries(want)) if (stable(d) !== synced[p]) queueWrite(p, d);
+  for (const p of Object.keys(synced)) if (!(p in want)) queueWrite(p, null);
+}
+function queueWrite(path, data) { writing.next.set(path, data); setSync("saving"); flush(path); }
+async function flush(path) {
+  if (writing.busy.has(path)) return;
+  writing.busy.add(path);
+  try {
+    while (writing.next.has(path)) {
+      const data = writing.next.get(path);
+      writing.next.delete(path);
+      try {
+        if (data === null) { await DB.doc(path).delete(); delete synced[path]; }
+        else { await DB.doc(path).set(data); synced[path] = stable(data); }
+      } catch (e) {
+        setSync("error", e);
+        clearTimeout(retryTimer); retryTimer = setTimeout(syncAll, 15000);
+        return;
+      }
+    }
+    if (writing.next.size === 0 && writing.busy.size === 1) setSync("saved");
+  } finally { writing.busy.delete(path); }
+}
+
+function applyRemote(path, d) {
+  const kind = path.split("/")[0];
+  if (kind === "workouts") {
+    const next = clean(d.groups);
+    if (stable(store.logs[d.date]?.[d.day]) === stable(next)) return false;
+    (store.logs[d.date] ||= {})[d.day] = next; return true;
+  }
+  if (kind === "mytargets") {
+    const next = clean(d.byExercise) || {};
+    if (stable(store.myTargets) === stable(next)) return false;
+    store.myTargets = next; return true;
+  }
+  if (kind === "myexercises") {
+    const next = clean(d.byMuscle) || {};
+    if (stable(store.myExercises) === stable(next)) return false;
+    store.myExercises = next; return true;
+  }
+  if (kind === "myfoods") {
+    const next = clean(d.foods) || [];
+    if (stable(store.myFoods) === stable(next)) return false;
+    store.myFoods = next; return true;
+  }
+  if (kind === "prefs") {
+    if (store.prefs.rate === d.rate) return false;
+    store.prefs.rate = d.rate; return true;
+  }
+  if (kind === "meals") {
+    const next = clean(d.meals) || [];
+    if (stable(store.meals[d.date]) === stable(next)) return false;
+    store.meals[d.date] = next; return true;
+  }
+  if (kind === "weights") {
+    const cur = store.bw.find(x => x.d === d.d);
+    if (cur && cur.w === d.w) return false;
+    store.bw = store.bw.filter(x => x.d !== d.d).concat({ d: d.d, w: d.w }).sort((a, b) => a.d.localeCompare(b.d)); return true;
+  }
+  return false;
+}
+function removeRemote(path, d) {
+  const kind = path.split("/")[0];
+  if (kind === "workouts" && store.logs[d.date]?.[d.day]) { delete store.logs[d.date][d.day]; return true; }
+  if (kind === "mytargets" && Object.keys(store.myTargets).length) { store.myTargets = {}; return true; }
+  if (kind === "myexercises" && Object.keys(store.myExercises).length) { store.myExercises = {}; return true; }
+  if (kind === "myfoods" && store.myFoods.length) { store.myFoods = []; return true; }
+  if (kind === "prefs" && store.prefs.rate != null) { delete store.prefs.rate; return true; }
+  if (kind === "meals" && store.meals[d.date]?.length) { delete store.meals[d.date]; return true; }
+  if (kind === "weights" && store.bw.some(x => x.d === d.d)) { store.bw = store.bw.filter(x => x.d !== d.d); return true; }
+  return false;
+}
+// Redraw after a remote change, but never while the viewer is typing in a field.
+function renderSoon() {
+  const a = document.activeElement;
+  if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) { renderPending = true; return; }
+  renderLog(); renderPlan(); renderBody(); renderMeals(); applyRate(); refreshFoodControls(); renderFoods();
+}
+document.addEventListener("focusout", () => {
+  if (renderPending) setTimeout(() => { renderPending = false; renderSoon(); }, 0);
+});
+// first = the first definitive load: the database wins for documents it already holds.
+// Later, a remote change is skipped while this page holds edits the database hasn't seen yet.
+function onDocs(kind, snap, first) {
+  const want = first ? null : desiredDocs();
+  let changed = false;
+  for (const ch of snap.docChanges()) {
+    const path = `${kind}/${ch.doc.id}`, d = ch.doc.data();
+    if (!first && stable(want[path]) !== synced[path]) continue;
+    if (ch.type === "removed") { delete synced[path]; if (removeRemote(path, d)) changed = true; }
+    else { synced[path] = stable(d); if (applyRemote(path, d)) changed = true; }
+  }
+  if (changed) {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+    renderSoon();
+  }
+}
+(async () => {
+  try { DB = null; } catch (e) { DB = null; }
+  if (!DB) { setSync("local"); return; }
+  let waiting = 7;
+  for (const kind of ["workouts", "weights", "meals", "prefs", "myfoods", "myexercises", "mytargets"]) {
+    let first = true;
+    DB.collection(kind).onSnapshot(snap => {
+      onDocs(kind, snap, first);
+      if (first && !snap.metadata.fromCache) {
+        first = false;
+        if (--waiting === 0) { syncReady = true; syncAll(); setSync("saved"); }
+      }
+    }, err => setSync("error", err));
+  }
+})();
+</script>
+</body>
+</html>

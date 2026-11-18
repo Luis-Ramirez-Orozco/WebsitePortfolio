@@ -188,6 +188,7 @@
      fit      : "cover" (fill the card, crop the edges; default) or "contain" (show everything, with bars)
      position : where to anchor the crop, as CSS object-position (e.g. "top" for page screenshots)
      poster   : (video only) an image to show until the video loads
+   cta      : label for the bar's link button (default "Visit site"), e.g. "Try demo"
    edge / edgeText : the solid color of the card's edge and the title printed on it.
    ────────────────────────────────────────────── */
 const SITES = [
@@ -196,12 +197,12 @@ const SITES = [
     edge: "#b49a6d", edgeText: "#111111", tags: "E-commerce", description: "Sample project — replace with your own." },
   { title: "Northwind Studio", url: "", disabled: true, image: "assets/stock/2.jpg",
     edge: "#b3afc2", edgeText: "#111111", tags: "Agency", description: "Sample project — replace with your own." },
-  { title: "Pine & Co.", url: "", disabled: true, image: "assets/stock/3.jpg",
-    edge: "#5d5063", edgeText: "#f5f5f5", tags: "Branding", description: "Sample project — replace with your own." },
-  { title: "Harbor Fitness", url: "", disabled: true, image: "assets/stock/4.jpg",
-    edge: "#d0cbba", edgeText: "#111111", tags: "Web app", description: "Sample project — replace with your own." },
-  { title: "Lumen Labs", url: "", disabled: true, image: "assets/stock/5.jpg",
-    edge: "#48474a", edgeText: "#f5f5f5", tags: "Landing page", description: "Sample project — replace with your own." },
+  { title: "Gym Leaderboard", url: "demos/gym-leaderboard/", cta: "Try demo", image: "shots/gymleaderboard.jpg", fit: "cover", position: "top",
+    edge: "#e9ecef", edgeText: "#111111", tags: "Web app", description: "Friend-group lift leaderboard demo with a sample crew. Nothing leaves your browser." },
+  { title: "Workout Tracker", url: "demos/workout/", cta: "Try demo", image: "shots/workout.jpg", fit: "cover", position: "top",
+    edge: "#0f172a", edgeText: "#f5f5f5", tags: "Web app", description: "Workout plan, log, weight and nutrition demo with sample data. Nothing leaves your browser." },
+  { title: "Rents Due", url: "demos/rents-due/", cta: "Try demo", image: "shots/rentsdue.jpg", fit: "cover", position: "top",
+    edge: "#2a2f3a", edgeText: "#f5f5f5", tags: "Web app", description: "Rent tracker demo with sample data. Nothing leaves your browser." },
   { title: "Get To Know Me", url: "https://luis-ramirez-orozco.github.io/GetToKnowMe/", cover: "gtkm",
     edge: "#f5f5f7", edgeText: "#1d1d1f", tags: "Personal site", description: "Engineering portfolio and projects." },
   { title: "LA Bot Shows",   url: "https://labotshows.com", cover: "labot",
@@ -487,7 +488,7 @@ function setBar(i) {
     meta.append(h, p);
     let a;
     if (s.disabled) { a = document.createElement('span'); a.className = 'soon'; a.textContent = 'Coming soon'; }
-    else { a = document.createElement('a'); a.textContent = 'Visit site ↗'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; }
+    else { a = document.createElement('a'); a.textContent = (s.cta || 'Visit site') + ' ↗'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; }
     const c = document.createElement('button'); c.type = 'button'; c.className = 'consult'; c.textContent = 'Book a Consult';
     c.addEventListener('click', () => window.openConsultCalendar && window.openConsultCalendar());
     bar.append(meta, c, a);
