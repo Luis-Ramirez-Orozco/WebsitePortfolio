@@ -1,0 +1,7 @@
+# Never upload local data or secrets when deploying from this computer with the Vercel CLI.
+/data
+.env*
+/.next
+/node_modules
+/scripts/ocr
+*.tsbuildinfo
